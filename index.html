@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8" />
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+    }
+    div.tooltip {
+      color: #222;
+      background-color: #fff;
+      padding: 0.5em;
+      text-shadow: #f5f5f5 0 1px 0;
+      border-radius: 2px;
+      opacity: 0.9;
+      position: absolute;
+    }
+  </style>
+</head>
+
+<body>
+  <div>
+    <input id="slider" type="range" value="1" min="1" max="60" step="1" />
+    <span id="day">Day: 1</span>
+  </div>
+  <script>
+    var width = 700,
+      height = 580;
+
+    var svg = d3
+      .select("body")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height);
+    var tooltip = d3
+      .select("body")
+      .append("div")
+      .attr("class", "hidden tooltip");
+
+    // On rajoute un groupe englobant toute la visualisation pour plus tard
+    var g = svg.append("g");
+
+    var projection = d3
+      .geoConicConformal()
+      .center([2.454071, 46.279229])
+      .scale([2800]);
+
+    var path = d3.geoPath().projection(projection);
+
+    var color = d3
+      .scaleQuantize()
+      .range(["#edf8e9", "#bae4b3", "#74c476", "#31a354", "#006d2c"]);
+
+    d3.csv("covid-france-mars-avril.csv").then(function (data) {
+      color.domain([0, 750]);
+      d3.json("departements-version-simplifiee.geojson").then(function (json) {
+        //On fusionne les donnees avec le GeoJSON des regions
+
+        var updateViz = (val) => {
+          d3.select("#day").html("Day: " + val);
+          var chosen_day = day[val - 1];
+
+          // On colorie chaque région
+          for (var i = 0; i < json.features.length; i++) {
+            d3.select("#region" + json.features[i].properties.code).style(
+              "fill",
+              function (d) {
+                // Si il n'y a aucune donnée le jour choisi on met en gris
+                if (!chosen_day) {
+                  d.properties.value = "Pas de données";
+                  return "#ccc";
+                }
+                var value = d.properties.date[chosen_day];
+                if (value == undefined) {
+                  d.properties.value = "Pas de données";
+                } else {
+                  d.properties.value = value;
+                }
+
+                // Si la région a une donnée le jour choisi
+                if (value !== undefined) {
+                  return color(value);
+                } else {
+                  // si pas de valeur alors en gris
+                  return "#ccc";
+                }
+              }
+            );
+          }
+        };
+
+        var daySet = new Set();
+        for (var i = 0; i < data.length; i++) {
+          var dataState = data[i].dep;
+
+          daySet.add(data[i].jour);
+
+          //Valeur associee a l'etat
+          var dataValue = parseInt(data[i].hosp);
+
+          //Recherche de l'etat dans le GeoJSON
+          for (var j = 0; j < json.features.length; j++) {
+            var jsonState = json.features[j].properties.code;
+
+            if (!("date" in json.features[j].properties)) {
+              json.features[j].properties.date = {};
+            }
+
+            if (dataState == jsonState || "0" + dataState == jsonState) {
+              //On injecte la valeur de l'Etat dans le json
+              if (dataValue) {
+                json.features[j].properties.date[data[i].jour] = dataValue;
+              }
+
+              //Pas besoin de chercher plus loin
+              break;
+            }
+          }
+        }
+        var day = Array.from(daySet);
+
+        // On trie les jours par ordre croissant
+        day.sort((a, b) => {
+          // On compare les jours et mois afin de déterminer l'ordre
+          if (
+            a.slice(4, 6) > b.slice(4, 6) ||
+            (a.slice(4, 6) === b.slice(4, 6) && a.slice(0, 2) > b.slice(0, 2))
+          ) {
+            return 1;
+          }
+          // Si même jour et même mois
+          if (
+            a.slice(4, 6) === b.slice(4, 6) &&
+            a.slice(0, 2) > b.slice(0, 2)
+          ) {
+            return 0;
+          }
+          return -1;
+        });
+
+        d3.select("#slider").on("input", function () {
+          updateViz(+this.value);
+        });
+
+        g.selectAll("path")
+          .data(json.features)
+          .enter()
+          .append("path")
+          .attr("d", path)
+          .attr("id", function (d) {
+            // chaque forme representant un etat aura
+            // deux classes province et un identifiant venant du json
+            return "region" + d.properties.code; //+ "=" + d.properties.value;
+          })
+          .on("mousemove", (event, d) => {
+            var mousePosition = d3.pointer(event);
+            tooltip
+              .style("opacity", 1)
+              .attr(
+                "style",
+                "left:" +
+                  (mousePosition[0] + 15) +
+                  "px; top:" +
+                  (mousePosition[1] - 35) +
+                  "px"
+              )
+              .html(d.properties.nom + ": " + d.properties.value);
+          })
+          .on("mouseout", function () {
+            tooltip.style("opacity", 0);
+          });
+
+        // On initialize au premier jour
+        updateViz(1);
+      });
+    });
+  </script>
+</body>
