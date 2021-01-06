@@ -1,225 +1,369 @@
 <!DOCTYPE html>
+
 <head>
   <meta charset="utf-8" />
   <script src="https://d3js.org/d3.v6.min.js"></script>
-  <style>
-    body {
-      margin: 0;
-      position: fixed;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
-    }
-    div.tooltip {
-      color: #222;
-      background-color: #fff;
-      padding: 0.5em;
-      text-shadow: #f5f5f5 0 1px 0;
-      border-radius: 2px;
-      opacity: 0.9;
-      position: absolute;
-    }
-  </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
 
 <body>
-  <div>
-    <input
-      id="slider"
-      type="range"
-      value="2009"
-      min="2009"
-      max="2017"
-      step="2"
-    />
-    <span id="year">Year: 2009</span>
-  </div>
+  <div id="app"></div>
+  <div id="my_dataviz"></div>
+  <div id="cocher"></div>
   <script>
-    var width = 700,
-      height = 580;
+    async function load_data() {
 
-    var svg = d3
-      .select("body")
-      .append("svg")
-      .attr("width", width)
-      .attr("height", height);
-    var tooltip = d3
-      .select("body")
-      .append("div")
-      .attr("class", "hidden tooltip");
+      var services = {};
+      var dechets = {};
+      var data = {
+        "Total_dechets": 0
+      };
+      let data_ = await d3.csv("https://koumoul.com/s/data-fair/api/v1/datasets/sinoe-(r)-destination-des-dechets-collectes-en-decheterie-par-type-de-traitement/full");
+      for (o of data_) {
+        if (parseInt(o.C_REGION) == 97 || parseInt(o.C_REGION) == 94) continue;
 
-    // On rajoute un groupe englobant toute la visualisation pour plus tard
-    var g = svg.append("g");
 
-    var projection = d3
-      .geoConicConformal()
-      .center([2.454071, 46.279229])
-      .scale([2800]);
-
-    var path = d3.geoPath().projection(projection);
-
-    var color = d3
-      .scaleQuantize()
-      .range(["#edf8e9", "#bae4b3", "#74c476", "#31a354", "#006d2c"]);
-
-    d3.csv("data.csv").then(function (data) {
-      color.domain([0, 750]);
-      d3.json("departements-version-simplifiee.geojson").then(function (json) {
-        //On fusionne les donnees avec le GeoJSON des regions
-
-        //console.log("Test");
-        //console.log(data[0]);
-        //console.log(data[1]);
-        //console.log(data[2]);
-        //console.log(data[0].TONNAGE_DECH);
-        //console.log(data[0].ANNEE);
-
-        //Pre-Traitement: mapper selon les régions
-        var dict = {};
-        console.log("Dico");
-        for (var i = 0; i < data.length; i++) {
-          //console.log("Boucle");
-          if (data[i].ANNEE in dict) {
-            if (data[i].C_DEPT in dict[data[i].ANNEE]) {
-              dict[data[i].ANNEE][data[i].C_DEPT] += parseInt(
-                data[i].TONNAGE_DECH
-              );
-            } else {
-              dict[data[i].ANNEE][data[i].C_DEPT] = parseInt(
-                data[i].TONNAGE_DECH
-              );
-            }
-          } else {
-            dict[data[i].ANNEE] = {};
-            dict[data[i].ANNEE][data[i].C_DEPT] = parseInt(
-              data[i].TONNAGE_DECH
-            );
-          }
+        if (!(o.C_REGION in data)) {
+          data[o.C_REGION] = {
+            "name": o.L_REGION,
+            "services": {},
+            "Total_dechets": 0,
+            "get_name": function () { return this.name },
+            "get_total_dechets": function () { return this.Total_dechets },
+            "get_year": function (year) { return this[year] }
+          };
         }
-        console.log(dict);
 
-        var updateViz = (val) => {
-          d3.select("#year").html("Year: " + val);
-          console.log("Update");
-          console.log(val);
-          var chosen_year = dict[parseInt(val)];
-          //var chosen_year = val;
-          console.log("chosen year");
-          console.log(chosen_year);
+        if (!(o.ANNEE in data)) {
+          data[o.ANNEE] = {};
+          data[o.ANNEE].get_total_dechets = function () { return this.Total_dechets };
+          data[o.ANNEE]["Total_dechets"] = 0;
+          data[o.ANNEE]["services"] = {};
+        }
 
-          // On colorie chaque région
-          for (var i = 0; i < json.features.length; i++) {
-            console.log("Boucle region");
-            d3.select("#region" + json.features[i].properties.code).style(
-              "fill",
-              function (d) {
-                // Si il n'y a aucune donnée le jour choisi on met en gris
-                if (!chosen_year[json.features[i].properties.code]) {
-                  return "#ccc";
-                }
-                console.log("d");
-                console.log(d);
+        if (!(o.ANNEE in data[o.C_REGION])) {
+          data[o.C_REGION][o.ANNEE] = { "get_total_dechets": function () { return this.Total_dechets } };
+          data[o.C_REGION][o.ANNEE]["Total_dechets"] = 0;
+          data[o.C_REGION][o.ANNEE]["services"] = {};
+          data[o.C_REGION][o.ANNEE]["get_service"] = function (service) { return this.services[service] };
+          data[o.C_REGION][o.ANNEE]["get_dechet"] = function (dechet) { return this[dechet]["Total_dechets"] };
+        }
 
-                var value = d.ANNEE[chosen_year];
-                console.log("value=", value);
+        if (!(o.C_TYP_REG_DECHET in data[o.C_REGION])) {
+          data[o.C_REGION][o.C_TYP_REG_DECHET] = {};
+          data[o.C_REGION][o.C_TYP_REG_DECHET]["Total_dechets"] = 0;
+          data[o.C_REGION][o.C_TYP_REG_DECHET]["services"] = {};
+        }
 
-                // Si la région a une donnée le jour choisi
-                if (value !== undefined) {
-                  return color(value);
-                } else {
-                  // si pas de valeur alors en gris
-                  return "#ccc";
-                }
-              }
-            );
-          }
+        if (!(o.C_TYP_REG_DECHET in data[o.C_REGION][o.ANNEE])) {
+          data[o.C_REGION][o.ANNEE][o.C_TYP_REG_DECHET] = {};
+          data[o.C_REGION][o.ANNEE][o.C_TYP_REG_DECHET]["services"] = {};
+          data[o.C_REGION][o.ANNEE][o.C_TYP_REG_DECHET]["Total_dechets"] = 0;
+        }
+
+        if (!(o.C_TYP_REG_DECHET in data[o.ANNEE])) {
+          data[o.ANNEE][o.C_TYP_REG_DECHET] = {};
+          data[o.ANNEE][o.C_TYP_REG_DECHET]["services"] = {};
+          data[o.ANNEE][o.C_TYP_REG_DECHET]["Total_dechets"] = 0;
+
+        }
+
+        if (!(o.C_TYP_REG_SERVICE in data[o.ANNEE][o.C_TYP_REG_DECHET]["services"])) {
+          data[o.ANNEE][o.C_TYP_REG_DECHET]["services"][o.C_TYP_REG_SERVICE] = 0;
+        }
+
+        if (!(o.C_TYP_REG_SERVICE in data[o.C_REGION][o.ANNEE][o.C_TYP_REG_DECHET]["services"])) {
+          data[o.C_REGION][o.ANNEE][o.C_TYP_REG_DECHET]["services"][o.C_TYP_REG_SERVICE] = 0;
+        }
+
+        if (!(o.C_TYP_REG_SERVICE in data[o.C_REGION][o.C_TYP_REG_DECHET]["services"])) {
+          data[o.C_REGION][o.C_TYP_REG_DECHET]["services"][o.C_TYP_REG_SERVICE] = 0;
+        }
+
+        if (!(o.C_TYP_REG_SERVICE in data[o.C_REGION][o.ANNEE]["services"])) {
+          data[o.C_REGION][o.ANNEE]["services"][o.C_TYP_REG_SERVICE] = 0;
+        }
+
+        if (!(o.C_TYP_REG_SERVICE in data[o.ANNEE]["services"])) {
+          data[o.ANNEE]["services"][o.C_TYP_REG_SERVICE] = 0;
+        }
+
+        if (!(o.C_TYP_REG_SERVICE in data[o.C_REGION]["services"])) {
+          data[o.C_REGION]["services"][o.C_TYP_REG_SERVICE] = 0;
+        }
+
+        var dechet_add = parseFloat(o.TONNAGE_DECH);
+        data[o.C_REGION]["services"][o.C_TYP_REG_SERVICE] += dechet_add;
+        data[o.ANNEE]["services"][o.C_TYP_REG_SERVICE] += dechet_add;
+        data[o.C_REGION][o.ANNEE]["services"][o.C_TYP_REG_SERVICE] += dechet_add;
+        data[o.C_REGION][o.C_TYP_REG_DECHET]["services"][o.C_TYP_REG_SERVICE] += dechet_add;
+        data[o.C_REGION][o.ANNEE][o.C_TYP_REG_DECHET]["services"][o.C_TYP_REG_SERVICE] += dechet_add;
+        data[o.ANNEE][o.C_TYP_REG_DECHET]["services"][o.C_TYP_REG_SERVICE] += dechet_add;
+        data[o.ANNEE][o.C_TYP_REG_DECHET]["Total_dechets"] += dechet_add;
+        data[o.C_REGION][o.ANNEE][o.C_TYP_REG_DECHET]["Total_dechets"] += dechet_add;
+        data[o.C_REGION][o.C_TYP_REG_DECHET]["Total_dechets"] += dechet_add;
+        data[o.ANNEE]["Total_dechets"] += dechet_add;
+        data[o.C_REGION][o.ANNEE]["Total_dechets"] += dechet_add;
+        data[o.C_REGION]["Total_dechets"] += dechet_add;
+        data[o.ANNEE]["Total_dechets"] += dechet_add;
+        data["Total_dechets"] += dechet_add;
+
+        if (!(o.C_TYP_REG_DECHET in dechets)) {
+          dechets[o.C_TYP_REG_DECHET] = o.L_TYP_REG_DECHET;
+        }
+
+        if (!(o.C_TYP_REG_SERVICE in services)) {
+          services[o.C_TYP_REG_SERVICE] = o.L_TYP_REG_SERVICE;
+        }
+
+      }
+      data.services = services;
+      data.dechets = dechets;
+      // FUNCTIONS 
+      data.get_total_dechets = function () { return this.Total_dechets };
+      data.get_region_list = function () { return [11, 24, 27, 28, 32, 44, 52, 53, 75, 76, 84, 93] };
+      data.get_year_list = function () { return [2009, 2011, 2013, 2015, 2017] };
+      data.get_region = function (region) {
+        if (region === undefined) return {
+          11: this[11],
+          24: this[24],
+          27: this[27],
+          28: this[28],
+          32: this[32],
+          44: this[44],
+          52: this[52],
+          53: this[53],
+          75: this[75],
+          76: this[76],
+          84: this[84],
+          93: this[93]
+        }
+        else return this[region];
+      };
+      data.get_year = function (year) { return this[year] };
+      data.get_type_dechets = function () { return this.dechets };
+      data.get_type_services = function () { return this.services };
+      data.get_name_region = function () {
+        return {
+          11: "Ile-de-France",
+          24: "Centre-Val de Loire",
+          27: "Bourgogne-Franche-Comté",
+          28: "Normandie",
+          32: "Hauts-de-France",
+          44: "Grand-Est",
+          52: "Pays de la Loire",
+          53: "Bretagne",
+          75: "Nouvelle-Aquitaine",
+          76: "Occitanie",
+          84: "Auvergne-Rhône-Alpes",
+          93: "PACA"
+
         };
+      };
+      return data;
+    }
+  </script>
+  <script>
+    async function main() {
 
-        var yearSet = new Set();
-        for (var i = 0; i < data.length; i++) {
-          var dataState = data[i].C_DEPT;
+      // recuperation des données
+      let data = await load_data();
 
-          yearSet.add(data[i].ANNEE);
+      // creation de la stack custom
+      let myStack = [];
+      let previousValues = new Array(data.get_region_list().length).fill(0);
 
-          //Valeur associee a l'etat
-          var dataValue = parseInt(data[i].TONNAGE_DECH);
-
-          //Recherche de l'etat dans le GeoJSON
-          for (var j = 0; j < json.features.length; j++) {
-            var jsonState = json.features[j].properties.code;
-
-            if (!("date" in json.features[j].properties)) {
-              json.features[j].properties.date = {};
-            }
-
-            if (dataState == jsonState || "0" + dataState == jsonState) {
-              //On injecte la valeur de l'Etat dans le json
-              if (dataValue) {
-                json.features[j].properties.date[data[i].jour] = dataValue;
-              }
-
-              //Pas besoin de chercher plus loin
-              break;
-            }
-          }
+      for (let year of data.get_year_list()) {
+        let yearStack = [];
+        for (let i = 0; i < data.get_region_list().length; i++) {
+          let yearRegionStack = [];
+          yearRegionStack.push(previousValues[i]);
+          previousValues[i] += data.get_region(data.get_region_list()[i]).get_year(year).get_total_dechets();
+          yearRegionStack.push(previousValues[i]);
+          yearRegionStack.push(data.get_region_list()[i].toString());
+          yearStack.push(yearRegionStack);
         }
-        var year = Array.from(yearSet);
+        myStack.push(yearStack);
+      }
 
-        // On trie les jours par ordre croissant
-        year.sort((a, b) => {
-          // On compare les jours et mois afin de déterminer l'ordre
-          if (
-            a.slice(4, 6) > b.slice(4, 6) ||
-            (a.slice(4, 6) === b.slice(4, 6) && a.slice(0, 2) > b.slice(0, 2))
-          ) {
-            return 1;
-          }
-          // Si même jour et même mois
-          if (
-            a.slice(4, 6) === b.slice(4, 6) &&
-            a.slice(0, 2) > b.slice(0, 2)
-          ) {
-            return 0;
-          }
-          return -1;
-        });
+      var subgroups_dur = data.get_year_list();
 
-        d3.select("#slider").on("input", function () {
-          updateViz(+this.value);
-        });
-
-        g.selectAll("path")
-          .data(json.features)
-          .enter()
-          .append("path")
-          .attr("d", path)
-          .attr("id", function (d) {
-            // chaque forme representant un etat aura
-            // deux classes province et un identifiant venant du json
-            return "region" + d.C_DEPT; //+ "=" + d.properties.value;
-          })
-          .on("mousemove", (event, d) => {
-            var mousePosition = d3.pointer(event);
-            tooltip
-              .style("opacity", 1)
-              .attr(
-                "style",
-                "left:" +
-                  (mousePosition[0] + 15) +
-                  "px; top:" +
-                  (mousePosition[1] - 35) +
-                  "px"
-              )
-              .html(d.N_DEPT + ": " + d.TONNAGE_DECH);
-          })
-          .on("mouseout", function () {
-            tooltip.style("opacity", 0);
-          });
-
-        // On initialize au premier jour
-        updateViz(2009);
+      // Créé des cases à cocher en fonction des sousgroupes (axe y)
+      var list_cocher = document.createElement('div');
+      subgroups_dur.forEach(function (grp) {
+        var cb = document.createElement('INPUT');
+        cb.setAttribute("type", "checkbox");
+        cb.setAttribute("id", grp);
+        cb.setAttribute("name", grp);
+        cb.setAttribute("checked", true);
+        cb.setAttribute("onclick", "cocher_case(" + grp + ")");
+        list_cocher.appendChild(cb);
+        var label = document.createElement('label');
+        label.setAttribute("for", grp);
+        label.textContent = grp;
+        list_cocher.appendChild(label);
       });
-    });
+
+      let cocher_case = function (cas) {
+        cas = cas.toString();
+        var checkbox = document.getElementById(cas);
+        if (checkbox.checked == true) {
+          if (!subgroups_dur.includes(cas)) {
+            subgroups_dur.push(cas);
+          }
+        } else {
+          var pos = subgroups_dur.indexOf(cas);
+          console.log(pos);
+          subgroups_dur.splice(pos, 1);
+        }
+        console.log(subgroups_dur);
+      };
+
+      var cocher = document.querySelector('#cocher');
+      app.appendChild(list_cocher);
+
+      // TODO : trie, choix des categories, choix des années
+
+      // data contient toutes les données nécessaire pour les data viz du projet
+      //
+      // Functions à dipostion :
+      //
+      // data.get_total_dechets() => Tous les déchets cumulés sur toutes les années
+      // data.get_region(region) => retourne les données d'une region
+      // data.get_year(year) => Renvoie les données d'une année
+
+      /*
+        Les régions sont :
+        11 (Ile-de-France)
+        24 (Centre-Val de Loire)
+        27 (Bourgogne-Franche-Comté)
+        28 (Normandie)
+        32 (Hauts-de-France)
+        44 (Grand-Est)
+        52 (Pays de la Loire)
+        53 (Bretagne)
+        75 (Nouvelle-Aquitaine)
+        76 (Occitanie)
+        84 (Auvergne-Rhône-Alpes)
+        93 (PACA)
+  
+        Les années sont :
+        2009, 2011, 2013, 2015, 2017
+        */
+
+      var colorRange = ['#e41a1c', '#377eb8', '#4daf4a', '#ff9900', '#800000'];
+
+      d3.csv("https://koumoul.com/s/data-fair/api/v1/datasets/sinoe-(r)-destination-des-dechets-collectes-en-decheterie-par-type-de-traitement/full").then((data_) => {
+        for (o of data_) {
+          if (parseInt(o.C_REGION) == 97 || parseInt(o.C_REGION) == 94) continue;
+
+          if (!(o.C_REGION in data)) {
+            data[o.C_REGION] = {
+              "name": o.L_REGION
+            };
+          }
+
+          if (!(o.ANNEE in data)) {
+            data[o.ANNEE] = {}
+            data[o.ANNEE]["Total_dechets"] = 0
+          }
+
+          if (!(o.ANNEE in data[o.C_REGION])) {
+            data[o.C_REGION][o.ANNEE] = {}
+            data[o.C_REGION][o.ANNEE]["Total_dechets"] = 0
+          }
+
+          data[o.ANNEE]["Total_dechets"] += parseFloat(o.TONNAGE_DECH);
+          data[o.C_REGION][o.ANNEE]["Total_dechets"] += parseFloat(o.TONNAGE_DECH);
+          data[o.ANNEE]["Total_dechets"] += parseFloat(o.TONNAGE_DECH);
+          data["Total_dechets"] += parseFloat(o.TONNAGE_DECH);
+
+        }
+      }).then(() => {
+
+        // FUNCTIONS 
+        data.get_total_dechets = function () { return this.Total_dechets };
+        data.get_region = function (region) { return this[region] };
+        data.get_year = function (year) { return this[year] };
+
+
+
+        // Tentative de diagramme baton (stacked barplot)
+
+        var groups = []
+
+        var subgroups = ["2009", "2011", "2013", "2015", "2017"]
+
+
+
+        var margin = { top: 10, right: 30, bottom: 20, left: 50 },
+          width = 460 - margin.left - margin.right,
+          height = 400 - margin.top - margin.bottom;
+
+        var svg = d3.select("#my_dataviz")
+          .append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        for (const [key, value] of Object.entries(data).slice(0, 12)) {
+          groups.push(key);
+        }
+
+        // Add X axis
+        var x = d3.scaleBand()
+          .domain(groups)
+          .range([0, width])
+          .padding([0.2]);
+        svg.append("g")
+          .attr("transform", "translate(0," + height + ")")
+          .call(d3.axisBottom(x).tickSizeOuter(0));
+
+        // Add Y axis
+        var y = d3.scaleLinear()
+          .domain([0, 10000000])
+          .range([height, 0]);
+        svg.append("g")
+          .call(d3.axisLeft(y));
+
+        // color palette = one color per subgroup
+        var color = d3.scaleOrdinal()
+          .domain(subgroups)
+          .range(['#e41a1c', '#377eb8', '#4daf4a', '#ff9900', '#800000'])
+
+
+        var colorCounter = 0;
+
+        svg.append("g")
+          .selectAll("g")
+          // Enter in the stack data = loop key per key = group per group
+          .data(myStack)
+          .enter().append("g")
+          .attr("fill", function (d) {
+            let col = color(colorCounter);
+            colorCounter++;
+            return col;
+          })
+          .selectAll("rect")
+          // enter a second time = loop subgroup per subgroup to add all rectangles
+          .data(function (d) { return d; })
+          .enter().append("rect")
+          .attr("x", function (d) { return x(d[2]); })
+          .attr("y", function (d) { return y(d[1]); })
+          .attr("height", function (d) { return y(d[0]) - y(d[1]); })
+          .attr("width", x.bandwidth())
+      });
+
+
+      /*{"Region" : {"annee XXXX" : 
+                        {"Déchets TYPE total" : XXX, "TYPE GESTION TOTAL" : XXX,
+                        "DECHET TYPE": {"GESTION TYPE: XXX", "Tonnage" : XXX} }} }
+              {"Total region XXX ... Total Année XXXX"}*/
+
+    }
+    main();
   </script>
 </body>
+
+</html>
