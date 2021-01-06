@@ -159,7 +159,26 @@
           93: "PACA"
 
         };
+
       };
+
+      data.get_name_region_string = function () {
+        return ["Ile-de-France",
+          "Centre-Val de Loire",
+          "Bourgogne-Franche-Comté",
+          "Normandie",
+          "Hauts-de-France",
+          "Grand-Est",
+          "Pays de la Loire",
+          "Bretagne",
+          "Nouvelle-Aquitaine",
+          "Occitanie",
+          "Auvergne-Rhône-Alpes",
+          "PACA"];
+      };
+
+
+      console.log(data.get_region(11).get_year(2009).get_dechet("02B"));
       return data;
     }
   </script>
@@ -288,7 +307,7 @@
 
 
 
-        var groups = []
+
 
         var margin = { top: 10, right: 30, bottom: 20, left: 50 },
           width = 460 - margin.left - margin.right,
@@ -301,13 +320,9 @@
           .append("g")
           .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-        for (const [key, value] of Object.entries(data).slice(0, 12)) {
-          groups.push(key);
-        }
-
         // Add X axis
         var x = d3.scaleBand()
-          .domain(groups.map(nb => data.get_region(nb).name))
+          .domain(data.get_name_region_string())
           .range([0, width])
           .padding([0.2]);
         svg.append("g")
