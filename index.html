@@ -180,7 +180,7 @@
           yearRegionStack.push(previousValues[i]);
           previousValues[i] += data.get_region(data.get_region_list()[i]).get_year(year).get_total_dechets();
           yearRegionStack.push(previousValues[i]);
-          yearRegionStack.push(data.get_region_list()[i].toString());
+          yearRegionStack.push(data.get_name_region()[data.get_region_list()[i]]);
           yearStack.push(yearRegionStack);
         }
         myStack.push(yearStack);
@@ -288,13 +288,7 @@
 
 
 
-        // Tentative de diagramme baton (stacked barplot)
-
         var groups = []
-
-        var subgroups = ["2009", "2011", "2013", "2015", "2017"]
-
-
 
         var margin = { top: 10, right: 30, bottom: 20, left: 50 },
           width = 460 - margin.left - margin.right,
@@ -313,7 +307,7 @@
 
         // Add X axis
         var x = d3.scaleBand()
-          .domain(groups)
+          .domain(groups.map(nb => data.get_region(nb).name))
           .range([0, width])
           .padding([0.2]);
         svg.append("g")
@@ -329,7 +323,7 @@
 
         // color palette = one color per subgroup
         var color = d3.scaleOrdinal()
-          .domain(subgroups)
+          .domain(subgroups_dur)
           .range(['#e41a1c', '#377eb8', '#4daf4a', '#ff9900', '#800000'])
 
 
@@ -360,7 +354,7 @@
                         {"Déchets TYPE total" : XXX, "TYPE GESTION TOTAL" : XXX,
                         "DECHET TYPE": {"GESTION TYPE: XXX", "Tonnage" : XXX} }} }
               {"Total region XXX ... Total Année XXXX"}*/
-
+      console.log(myStack);
     }
     main();
   </script>
