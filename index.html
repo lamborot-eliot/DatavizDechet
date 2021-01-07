@@ -272,7 +272,7 @@
 
       var colorRange = ['#e41a1c', '#377eb8', '#4daf4a', '#ff9900', '#800000'];
 
-      d3.csv("https://koumoul.com/s/data-fair/api/v1/datasets/sinoe-(r)-destination-des-dechets-collectes-en-decheterie-par-type-de-traitement/full").then((data_) => {
+      d3.csv("dataFull.csv").then((data_) => {
         for (o of data_) {
           if (parseInt(o.C_REGION) == 97 || parseInt(o.C_REGION) == 94) continue;
 
