@@ -272,136 +272,96 @@
 
       var colorRange = ['#e41a1c', '#377eb8', '#4daf4a', '#ff9900', '#800000'];
 
-      d3.csv("https://koumoul.com/s/data-fair/api/v1/datasets/sinoe-(r)-destination-des-dechets-collectes-en-decheterie-par-type-de-traitement/full").then((data_) => {
-        for (o of data_) {
-          if (parseInt(o.C_REGION) == 97 || parseInt(o.C_REGION) == 94) continue;
 
-          if (!(o.C_REGION in data)) {
-            data[o.C_REGION] = {
-              "name": o.L_REGION
-            };
-          }
+      var margin = { top: 10, right: 200, bottom: 150, left: 70 },
+        width = 860 - margin.left - margin.right,
+        height = 400 - margin.top - margin.bottom;
 
-          if (!(o.ANNEE in data)) {
-            data[o.ANNEE] = {}
-            data[o.ANNEE]["Total_dechets"] = 0
-          }
+      var svg = d3.select("#my_dataviz")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-          if (!(o.ANNEE in data[o.C_REGION])) {
-            data[o.C_REGION][o.ANNEE] = {}
-            data[o.C_REGION][o.ANNEE]["Total_dechets"] = 0
-          }
+      // Add X axis
+      var x = d3.scaleBand()
+        .domain(data.get_name_region_string())
+        .range([0, width])
+        .padding([0.2]);
+      svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x).tickSizeOuter(0))
+        .selectAll("text")
+        .style("text-anchor", "end")
+        .attr("dx", "-.8em")
+        .attr("dy", ".15em")
+        .attr("transform", "rotate(-65)");
 
-          data[o.ANNEE]["Total_dechets"] += parseFloat(o.TONNAGE_DECH);
-          data[o.C_REGION][o.ANNEE]["Total_dechets"] += parseFloat(o.TONNAGE_DECH);
-          data[o.ANNEE]["Total_dechets"] += parseFloat(o.TONNAGE_DECH);
-          data["Total_dechets"] += parseFloat(o.TONNAGE_DECH);
+      // Add Y axis
+      var y = d3.scaleLinear()
+        .domain([0, 10000000])
+        .range([height, 0]);
+      svg.append("g")
+        .call(d3.axisLeft(y));
 
-        }
-      }).then(() => {
-
-        // FUNCTIONS 
-        data.get_total_dechets = function () { return this.Total_dechets };
-        data.get_region = function (region) { return this[region] };
-        data.get_year = function (year) { return this[year] };
-
-
-
-
-
-        var margin = { top: 10, right: 200, bottom: 150, left: 70 },
-          width = 860 - margin.left - margin.right,
-          height = 400 - margin.top - margin.bottom;
-
-        var svg = d3.select("#my_dataviz")
-          .append("svg")
-          .attr("width", width + margin.left + margin.right)
-          .attr("height", height + margin.top + margin.bottom)
-          .append("g")
-          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-        // Add X axis
-        var x = d3.scaleBand()
-          .domain(data.get_name_region_string())
-          .range([0, width])
-          .padding([0.2]);
-        svg.append("g")
-          .attr("transform", "translate(0," + height + ")")
-          .call(d3.axisBottom(x).tickSizeOuter(0))
-          .selectAll("text")
-          .style("text-anchor", "end")
-          .attr("dx", "-.8em")
-          .attr("dy", ".15em")
-          .attr("transform", "rotate(-65)");
-
-        // Add Y axis
-        var y = d3.scaleLinear()
-          .domain([0, 10000000])
-          .range([height, 0]);
-        svg.append("g")
-          .call(d3.axisLeft(y));
-
-        // color palette = one color per subgroup
-        var color = d3.scaleOrdinal()
-          .domain(subgroups_dur)
-          .range(['#e41a1c', '#377eb8', '#4daf4a', '#ff9900', '#800000'])
+      // color palette = one color per subgroup
+      var color = d3.scaleOrdinal()
+        .domain(subgroups_dur)
+        .range(['#e41a1c', '#377eb8', '#4daf4a', '#ff9900', '#800000'])
 
 
-        var colorCounter = 0;
+      var colorCounter = 0;
 
-        svg.append("g")
-          .selectAll("g")
-          // Enter in the stack data = loop key per key = group per group
-          .data(myStack)
-          .enter().append("g")
-          .attr("fill", function (d) {
-            let col = color(colorCounter);
-            colorCounter++;
-            return col;
-          })
-          .selectAll("rect")
-          // enter a second time = loop subgroup per subgroup to add all rectangles
-          .data(function (d) { return d; })
-          .enter().append("rect")
-          .attr("x", function (d) { return x(d[2]); })
-          .attr("y", function (d) { return y(d[1]); })
-          .attr("height", function (d) { return y(d[0]) - y(d[1]); })
-          .attr("width", x.bandwidth());
-
-
-        // add legend   
-        let legendRectSize = 20;
-        let legendSpacing = 20;
-        var legend = svg.selectAll('.legend')                     
-          .data(color.domain().reverse())                                   
-          .enter()                                                
-          .append('g')                                            
-          .attr('class', 'legend')                                
-          .attr('transform', function (d, i) {                     
-            var height = legendRectSize + legendSpacing;          
-            var offset = height * color.domain().length / 2;     
-            var horz = -2 * legendRectSize + width + margin.left;                       
-            var vert = i * height - offset;                       
-            return 'translate(' + horz + ',' + vert + ')';        
-          });                                                     
-
-        legend.append('rect')                                     
-          .attr('width', legendRectSize)                          
-          .attr('height', legendRectSize)                         
-          .style('fill', color)                                   
-          .style('stroke', color);                                
-
-        legend.append('text')                                     
-          .attr('x', legendRectSize + legendSpacing)              
-          .attr('y', 215 + legendRectSize - legendSpacing)
-          .data(data.get_year_list().reverse())
-          .text(function (d, i) { 
-            return d; 
-          });
+      svg.append("g")
+        .selectAll("g")
+        // Enter in the stack data = loop key per key = group per group
+        .data(myStack)
+        .enter().append("g")
+        .attr("fill", function (d) {
+          let col = color(colorCounter);
+          colorCounter++;
+          return col;
+        })
+        .selectAll("rect")
+        // enter a second time = loop subgroup per subgroup to add all rectangles
+        .data(function (d) { return d; })
+        .enter().append("rect")
+        .attr("x", function (d) { return x(d[2]); })
+        .attr("y", function (d) { return y(d[1]); })
+        .attr("height", function (d) { return y(d[0]) - y(d[1]); })
+        .attr("width", x.bandwidth());
 
 
-      });
+      // add legend   
+      let legendRectSize = 20;
+      let legendSpacing = 20;
+      var legend = svg.selectAll('.legend')
+        .data(color.domain().reverse())
+        .enter()
+        .append('g')
+        .attr('class', 'legend')
+        .attr('transform', function (d, i) {
+          var height = legendRectSize + legendSpacing;
+          var offset = height * color.domain().length / 2;
+          var horz = -2 * legendRectSize + width + margin.left;
+          var vert = i * height - offset;
+          return 'translate(' + horz + ',' + vert + ')';
+        });
 
+      legend.append('rect')
+        .attr('width', legendRectSize)
+        .attr('height', legendRectSize)
+        .style('fill', color)
+        .style('stroke', color);
+
+      legend.append('text')
+        .attr('x', legendRectSize + legendSpacing)
+        .attr('y', 215 + legendRectSize - legendSpacing)
+        .data(data.get_year_list().reverse())
+        .text(function (d, i) {
+          return d;
+        });
 
       /*{"Region" : {"annee XXXX" : 
                         {"Déchets TYPE total" : XXX, "TYPE GESTION TOTAL" : XXX,
