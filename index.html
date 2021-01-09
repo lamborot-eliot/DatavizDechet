@@ -258,7 +258,7 @@
         return d;
       });
 
-    async function main() {
+    async function init() {
 
       // recuperation des données
       data = await load_data();
@@ -274,8 +274,8 @@
       let descOrderString = descOrder.map((value, index) => {
         return value[2];
       });
-      
-      init(descOrderString);
+
+      update(data.get_year_list(), data.get_region_list());
 
     }
 
@@ -288,12 +288,21 @@
       // update x axis
       x.domain(newStack[0].map((value, index) => {return value[2]}));
       d3.select(".axis.x")
+      .transition()
+      .duration(750)
       .call(d3.axisBottom(x).tickSizeOuter(0))
+      .selectAll("text")
+      .style("text-anchor", "end")
+      .attr("dx", "-.8em")
+      .attr("dy", ".15em")
+      .attr("transform", "rotate(-65)")
 
       // update y axis
       let maxY = d3.max(newStack[newStack.length - 1], (d) => {return d3.max(d);});
       y.domain([0, maxY*1.2]);
       svg.select(".axis.y")
+      .transition()
+      .duration(750)
       .call(d3.axisLeft(y))
 
 
@@ -322,44 +331,6 @@
       .attr("height", function (d) { return y(d[0]) - y(d[1]); })
       .attr("width", x.bandwidth());
       
-    }
-    
-    function init(regionsOrder) {
-
-      x.domain(regionsOrder);
-
-      let maxY = d3.max(myStack[myStack.length - 1], (d) => {return d3.max(d);});
-      y.domain([0, maxY*1.2]);
-
-      svg.select(".axis.x")
-        .call(d3.axisBottom(x).tickSizeOuter(0))
-        .selectAll("text")
-        .style("text-anchor", "end")
-        .attr("dx", "-.8em")
-        .attr("dy", ".15em")
-        .attr("transform", "rotate(-65)")
-
-      svg.select(".axis.y")
-      .call(d3.axisLeft(y))
-
-      svg
-        .selectAll(".bar-group")
-        // Enter in the stack data = loop key per key = group per group
-        .data(myStack)
-        .enter().append("g")
-        .classed("bar-group", true)
-        .attr("fill", function (d) {
-          return color(d[3]);
-        })
-        .selectAll(".bar")
-        // enter a second time = loop subgroup per subgroup to add all rectangles
-        .data(function (d) { return d; })
-        .enter().append("rect")
-        .classed('bar', true)
-        .attr("x", function (d) { return x(d[2]); })
-        .attr("y", function (d) { return y(d[1]); })
-        .attr("height", function (d) { return y(d[0]) - y(d[1]); })
-        .attr("width", x.bandwidth());
     }
   
     function dataToStack(years, regions) {
@@ -392,7 +363,7 @@
       return newStack;
     }
   
-    main()
+    init()
   </script>
 </body>
 
