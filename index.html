@@ -5,12 +5,19 @@
   <script src="https://d3js.org/d3.v6.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
-
+<style>
+    .error{
+       color: #D8000C;
+       background-color: #FFBABA;
+    }
+ </style>
 <body>
   <div id="app"></div>
   <div id="my_dataviz"></div>
   <div id="cocher"></div>
+  <span class="error" id="errorCheckbox"></span>
   <script>
+    console.clear();
     async function load_data() {
 
       var services = {};
@@ -178,7 +185,8 @@
       };
 
 
-      console.log(data.get_region(11).get_year(2009).get_dechet("02B"));
+      // console.log(data.get_region(11).get_year(2009).get_dechet("02B"));
+      console.log(data);
       return data;
     }
   </script>
@@ -266,6 +274,8 @@
       // creation de la stack custom
       myStack = dataToStack(data.get_year_list(), data.get_region_list())
 
+      chosenYears = data.get_year_list();
+      console.log(chosenYears);
       // trie de la stack
       let descOrder = myStack[myStack.length - 1].sort((a, b) => {
         return b[1] - a[1];
@@ -277,13 +287,15 @@
 
       update(data.get_year_list(), data.get_region_list());
 
+      checkbox_create();
+
     }
 
     function update(years, regions) {
 
       // new stack creation
       let newStack = dataToStack(years, regions)
-      console.log(newStack);
+      // console.log(newStack);
 
       // update x axis
       x.domain(newStack[0].map((value, index) => {return value[2]}));
@@ -316,7 +328,7 @@
       .enter().append('g')
       .classed('bar-group', true)
       .attr("fill", function (d) {
-        console.log(d[0][3]);
+        //console.log(d[0][3]);
           return color(d[0][3]);
         });
 
@@ -364,6 +376,52 @@
     }
   
     init()
+  </script>
+
+  <script>
+      function cocher_case(cas) {
+          //cas = cas.toString();
+          var checkbox = document.getElementById(cas);
+          if (checkbox.checked == true) {
+            if (!chosenYears.includes(cas)) {
+              chosenYears.push(cas);
+            }
+            document.getElementById("errorCheckbox").innerHTML = "";
+          } else {
+            if(chosenYears.length > 1) {
+              var pos = chosenYears.indexOf(cas);
+              chosenYears.splice(pos, 1);
+            } else {
+              checkbox.checked = true;
+              document.getElementById("errorCheckbox").innerHTML = "Gardez au moins une année sélectionnée!";
+            }        
+          }
+          update(chosenYears, data.get_region_list());
+        };
+
+      function checkbox_create() {
+        
+        var subgroups_dur = data.get_year_list();
+        var list_cocher = document.createElement('div');
+
+        subgroups_dur.forEach(function (grp) {
+          var cb = document.createElement('INPUT');
+          cb.setAttribute("type", "checkbox");
+          cb.setAttribute("id", grp);
+          cb.setAttribute("name", grp);
+          cb.setAttribute("checked", true);
+          cb.setAttribute("onclick", "cocher_case("+grp+")");
+          list_cocher.appendChild(cb);
+          var label = document.createElement('label');
+          label.setAttribute("for", grp);
+          label.textContent = grp;
+          list_cocher.appendChild(label);
+        });
+
+        var cocher = document.querySelector('#cocher');
+        app.appendChild(list_cocher);
+      }
+      
   </script>
 </body>
 
