@@ -248,35 +248,7 @@
       .domain(['2009', '2011', '2013', '2015', '2017'])
       .range(['#e41a1c', '#377eb8', '#4daf4a', '#ff9900', '#800000'])
 
-    // add legend   
-    let legendRectSize = 20;
-    let legendSpacing = 20;
-    var legend = svg.selectAll('.legend')
-      .data(color.domain().reverse())
-      .enter()
-      .append('g')
-      .attr('class', 'legend')
-      .attr('transform', function (d, i) {
-        var height = legendRectSize + legendSpacing;
-        var offset = height * color.domain().length / 2;
-        var horz = -2 * legendRectSize + width + margin.left;
-        var vert = 215 + i * height - offset;
-        return 'translate(' + horz + ',' + vert + ')';
-      });
-
-    legend.append('rect')
-      .attr('width', legendRectSize)
-      .attr('height', legendRectSize)
-      .style('fill', color)
-      .style('stroke', color);
-
-    legend.append('text')
-      .attr('x', legendRectSize + legendSpacing)
-      .attr('y', 16 + legendRectSize - legendSpacing)
-      .data(['2009', '2011', '2013', '2015', '2017'].reverse())
-      .text(function (d, i) {
-        return d;
-      });
+    
 
     async function init() {
 
@@ -297,7 +269,9 @@
         return value[2];
       });
 
-      update(data.get_year_list(), data.get_region_list());
+      // update(data.get_year_list(), data.get_region_list());
+      update(['02A', '02B'], [11, 24, 27]);
+
 
       checkbox_create();
 
@@ -357,9 +331,40 @@
         .on("mousemove", mousemove)
         .on("mouseleave", mouseleave);
 
+      // add legend   
+      let legendRectSize = 20;
+      let legendSpacing = 20;
+      svg.selectAll('.legend').remove();
+      var legend = svg.selectAll('.legend')
+        .data(chosenYears.sort())
+        .enter()
+        .append('g')
+        .attr('class', 'legend')
+        .attr('transform', function (d, i) {
+          var height = legendRectSize + legendSpacing;
+          var offset = height * chosenYears.length / 2;
+          var horz = -2 * legendRectSize + width + margin.left;
+          var vert = 215 + i * height - offset;
+          return 'translate(' + horz + ',' + vert + ')';
+        });
+
+      legend.append('rect')
+        .attr('width', legendRectSize)
+        .attr('height', legendRectSize)
+        .style('fill', color)
+        .style('stroke', color);
+
+      legend.append('text')
+        .attr('x', legendRectSize + legendSpacing)
+        .attr('y', 16 + legendRectSize - legendSpacing)
+        .data(chosenYears.reverse().sort())
+        .text(function (d, i) {
+          return d;
+        });
+
     }
 
-    function dataToStack(years, regions) {
+    function dataToStack(colors, Xs) {
 
       let newStack = [];
 
@@ -367,25 +372,40 @@
       let previousValues = {};
 
       // init previous values dict with zeros
-      for (let region of regions) {
-        previousValues[region] = 0;
+      for (let x of Xs) {
+        previousValues[x] = 0;
       }
+      // years * regions
+      // for (let year of years) {
+      //   let yearStack = [];
+      //   for (let region of regions) {
+      //     let yearRegionStack = [];
+      //     yearRegionStack.push(previousValues[region]);
+      //     previousValues[region] += data.get_region(region).get_year(year).get_total_dechets();
+      //     yearRegionStack.push(previousValues[region]);
+      //     yearRegionStack.push(data.get_name_region()[region]);
+      //     yearRegionStack.push(year);
+      //     yearRegionStack.push(region);
+      //     yearStack.push(yearRegionStack);
+      //   }
+      //   newStack.push(yearStack);
+      // }
 
-      for (let year of years) {
+      for (let type of colors) {
         let yearStack = [];
-        for (let region of regions) {
+        for (let region of Xs) {
           let yearRegionStack = [];
           yearRegionStack.push(previousValues[region]);
-          previousValues[region] += data.get_region(region).get_year(year).get_total_dechets();
+          previousValues[region] += data.get_region(region)[type].Total_dechets;
           yearRegionStack.push(previousValues[region]);
           yearRegionStack.push(data.get_name_region()[region]);
-          yearRegionStack.push(year);
+          yearRegionStack.push(type);
           yearRegionStack.push(region);
           yearStack.push(yearRegionStack);
         }
         newStack.push(yearStack);
       }
-
+      console.log(newStack);
       return newStack;
     }
 
@@ -441,7 +461,7 @@
           document.getElementById("errorCheckbox").innerHTML = "Gardez au moins une année sélectionnée!";
         }
       }
-      update(chosenYears, data.get_region_list());
+      update(chosenYears.sort(), data.get_region_list());
     };
 
     function checkbox_create() {
