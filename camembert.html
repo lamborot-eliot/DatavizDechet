@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Parcel Sandbox</title>
+		<meta charset="UTF-8" />
+		<script src="https://d3js.org/d3.v6.min.js"></script>
+		<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	</head>
+
+	<style>
+		div.tooltip {
+			color: #222;
+			background-color: #fff;
+			padding: 0.5em;
+			text-shadow: #f5f5f5 0 1px 0;
+			border-radius: 2px;
+			opacity: 0.9;
+			position: absolute;
+		}
+	</style>
+	<body>
+		<div id="app"></div>
+
+		<script>
+			async function load_data() {
+				var services = {};
+				var dechets = {};
+				var data = {
+					Total_dechets: 0,
+					services: {},
+					dechets: {}
+				};
+				let data_ = await d3.csv(
+					"https://koumoul.com/s/data-fair/api/v1/datasets/sinoe-(r)-destination-des-dechets-collectes-en-decheterie-par-type-de-traitement/full"
+				);
+				for (o of data_) {
+					if (
+						parseInt(o.C_REGION) == 97 ||
+						parseInt(o.C_REGION) == 94
+					)
+						continue;
+
+					if (!(o.C_REGION in data)) {
+						data[o.C_REGION] = {
+							name: o.L_REGION,
+							services: {},
+							Total_dechets: 0,
+							get_name: function () {
+								return this.name;
+							},
+							get_total_dechets: function () {
+								return this.Total_dechets;
+							},
+							get_year: function (year) {
+								return this[year];
+							}
+						};
+					}
+
+					if (!(o.ANNEE in data)) {
+						data[o.ANNEE] = {};
+						data[o.ANNEE].get_total_dechets = function () {
+							return this.Total_dechets;
+						};
+						data[o.ANNEE]["get_service"] = function (service) {
+							return this.services[service];
+						};
+						data[o.ANNEE]["get_dechet"] = function (dechet) {
+							return this[dechet]["Total_dechets"];
+						};
+						data[o.ANNEE]["Total_dechets"] = 0;
+						data[o.ANNEE]["services"] = {};
+					}
+
+					if (!(o.ANNEE in data[o.C_REGION])) {
+						data[o.C_REGION][o.ANNEE] = {
+							get_total_dechets: function () {
+								return this.Total_dechets;
+							}
+						};
+						data[o.C_REGION][o.ANNEE]["Total_dechets"] = 0;
+						data[o.C_REGION][o.ANNEE]["services"] = {};
+						data[o.C_REGION][o.ANNEE]["get_service"] = function (
+							service
+						) {
+							return this.services[service];
+						};
+						data[o.C_REGION][o.ANNEE]["get_dechet"] = function (
+							dechet
+						) {
+							return this[dechet]["Total_dechets"];
+						};
+					}
+
+					if (!(o.C_TYP_REG_DECHET in data[o.C_REGION])) {
+						data[o.C_REGION][o.C_TYP_REG_DECHET] = {};
+						data[o.C_REGION][o.C_TYP_REG_DECHET][
+							"Total_dechets"
+						] = 0;
+						data[o.C_REGION][o.C_TYP_REG_DECHET]["services"] = {};
+					}
+
+					if (!(o.C_TYP_REG_DECHET in data[o.C_REGION][o.ANNEE])) {
+						data[o.C_REGION][o.ANNEE][o.C_TYP_REG_DECHET] = {};
+						data[o.C_REGION][o.ANNEE][o.C_TYP_REG_DECHET][
+							"services"
+						] = {};
+						data[o.C_REGION][o.ANNEE][o.C_TYP_REG_DECHET][
+							"Total_dechets"
+						] = 0;
+					}
+
+					if (!(o.C_TYP_REG_DECHET in data[o.ANNEE])) {
+						data[o.ANNEE][o.C_TYP_REG_DECHET] = {};
+						data[o.ANNEE][o.C_TYP_REG_DECHET]["services"] = {};
+						data[o.ANNEE][o.C_TYP_REG_DECHET]["Total_dechets"] = 0;
+					}
+
+					if (
+						!(
+							o.C_TYP_REG_SERVICE in
+							data[o.ANNEE][o.C_TYP_REG_DECHET]["services"]
+						)
+					) {
+						data[o.ANNEE][o.C_TYP_REG_DECHET]["services"][
+							o.C_TYP_REG_SERVICE
+						] = 0;
+					}
+
+					if (
+						!(
+							o.C_TYP_REG_SERVICE in
+							data[o.C_REGION][o.ANNEE][o.C_TYP_REG_DECHET][
+								"services"
+							]
+						)
+					) {
+						data[o.C_REGION][o.ANNEE][o.C_TYP_REG_DECHET][
+							"services"
+						][o.C_TYP_REG_SERVICE] = 0;
+					}
+
+					if (
+						!(
+							o.C_TYP_REG_SERVICE in
+							data[o.C_REGION][o.C_TYP_REG_DECHET]["services"]
+						)
+					) {
+						data[o.C_REGION][o.C_TYP_REG_DECHET]["services"][
+							o.C_TYP_REG_SERVICE
+						] = 0;
+					}
+
+					if (
+						!(
+							o.C_TYP_REG_SERVICE in
+							data[o.C_REGION][o.ANNEE]["services"]
+						)
+					) {
+						data[o.C_REGION][o.ANNEE]["services"][
+							o.C_TYP_REG_SERVICE
+						] = 0;
+					}
+
+					if (!(o.C_TYP_REG_SERVICE in data[o.ANNEE]["services"])) {
+						data[o.ANNEE]["services"][o.C_TYP_REG_SERVICE] = 0;
+					}
+
+					if (
+						!(o.C_TYP_REG_SERVICE in data[o.C_REGION]["services"])
+					) {
+						data[o.C_REGION]["services"][o.C_TYP_REG_SERVICE] = 0;
+					}
+
+					if (!(o.C_TYP_REG_DECHET in data.dechets)) {
+						data["dechets"][o.C_TYP_REG_DECHET] = 0;
+					}
+
+					if (!(o.C_TYP_REG_SERVICE in data.services)) {
+						data["services"][o.C_TYP_REG_SERVICE] = 0;
+					}
+
+					var dechet_add = parseFloat(o.TONNAGE_DECH);
+					data["services"][o.C_TYP_REG_SERVICE] += dechet_add;
+					data["dechets"][o.C_TYP_REG_DECHET] += dechet_add;
+					data[o.C_REGION]["services"][
+						o.C_TYP_REG_SERVICE
+					] += dechet_add;
+					data[o.ANNEE]["services"][
+						o.C_TYP_REG_SERVICE
+					] += dechet_add;
+					data[o.C_REGION][o.ANNEE]["services"][
+						o.C_TYP_REG_SERVICE
+					] += dechet_add;
+					data[o.C_REGION][o.C_TYP_REG_DECHET]["services"][
+						o.C_TYP_REG_SERVICE
+					] += dechet_add;
+					data[o.C_REGION][o.ANNEE][o.C_TYP_REG_DECHET]["services"][
+						o.C_TYP_REG_SERVICE
+					] += dechet_add;
+					data[o.ANNEE][o.C_TYP_REG_DECHET]["services"][
+						o.C_TYP_REG_SERVICE
+					] += dechet_add;
+					data[o.ANNEE][o.C_TYP_REG_DECHET][
+						"Total_dechets"
+					] += dechet_add;
+					data[o.C_REGION][o.ANNEE][o.C_TYP_REG_DECHET][
+						"Total_dechets"
+					] += dechet_add;
+					data[o.C_REGION][o.C_TYP_REG_DECHET][
+						"Total_dechets"
+					] += dechet_add;
+					data[o.ANNEE]["Total_dechets"] += dechet_add;
+					data[o.C_REGION][o.ANNEE]["Total_dechets"] += dechet_add;
+					data[o.C_REGION]["Total_dechets"] += dechet_add;
+					data[o.ANNEE]["Total_dechets"] += dechet_add;
+					data["Total_dechets"] += dechet_add;
+
+					if (!(o.C_TYP_REG_DECHET in dechets)) {
+						dechets[o.C_TYP_REG_DECHET] = o.L_TYP_REG_DECHET;
+					}
+
+					if (!(o.C_TYP_REG_SERVICE in services)) {
+						services[o.C_TYP_REG_SERVICE] = o.L_TYP_REG_SERVICE;
+					}
+				}
+				data.services_name = services;
+				data.dechets_name = dechets;
+				// FUNCTIONS
+				data.get_total_dechets = function () {
+					return this.Total_dechets;
+				};
+				data.get_dechet = function (type_dechet) {
+					return this.dechets[type_dechet];
+				};
+				data.get_service = function (type_service) {
+					return this.dechets[type_service];
+				};
+				data.get_region_list = function () {
+					return [11, 24, 27, 28, 32, 44, 52, 53, 75, 76, 84, 93];
+				};
+				data.get_year_list = function () {
+					return [2009, 2011, 2013, 2015, 2017];
+				};
+				data.get_region = function (region) {
+					if (region === undefined)
+						return {
+							11: this[11],
+							24: this[24],
+							27: this[27],
+							28: this[28],
+							32: this[32],
+							44: this[44],
+							52: this[52],
+							53: this[53],
+							75: this[75],
+							76: this[76],
+							84: this[84],
+							93: this[93]
+						};
+					else return this[region];
+				};
+				data.get_year = function (year) {
+					return this[year];
+				};
+				data.get_type_dechets = function () {
+					return this.dechets_name;
+				};
+				data.get_type_services = function () {
+					return this.services_name;
+				};
+				data.get_name_region = function () {
+					return {
+						11: "Ile-de-France",
+						24: "Centre-Val de Loire",
+						27: "Bourgogne-Franche-Comté",
+						28: "Normandie",
+						32: "Hauts-de-France",
+						44: "Grand-Est",
+						52: "Pays de la Loire",
+						53: "Bretagne",
+						75: "Nouvelle-Aquitaine",
+						76: "Occitanie",
+						84: "Auvergne-Rhône-Alpes",
+						93: "PACA"
+					};
+				};
+
+				data.get_name_region_string = function () {
+					return [
+						"Ile-de-France",
+						"Centre-Val de Loire",
+						"Bourgogne-Franche-Comté",
+						"Normandie",
+						"Hauts-de-France",
+						"Grand-Est",
+						"Pays de la Loire",
+						"Bretagne",
+						"Nouvelle-Aquitaine",
+						"Occitanie",
+						"Auvergne-Rhône-Alpes",
+						"PACA"
+					];
+				};
+
+				console.log(
+					data.get_region(11).get_year(2009).get_dechet("02B")
+				);
+				return data;
+			}
+		</script>
+		<script>
+			console.clear();
+			var width = 450;
+			var height = 450;
+			var margin = 40;
+
+			var radius = Math.min(width, height) / 2 - margin;
+
+			var svg = d3
+				.select("#app")
+				.append("svg")
+				.attr("width", width)
+				.attr("height", height)
+				.append("g")
+				.attr(
+					"transform",
+					"translate(" + width / 2 + "," + height / 2 + ")"
+				);
+
+			var pie = d3.pie().value(function (d) {
+				return d[1];
+			});
+
+			var colorRange = [
+				"#e41a1c",
+				"#377eb8",
+				"#4daf4a",
+				"#993A80",
+				"#800000",
+				"#ff9900",
+				"#98928B"
+			];
+
+			var arcGenerator = d3.arc().innerRadius(0).outerRadius(radius);
+
+			async function init() {
+				data = await load_data();
+
+				var data_dechet = {};
+				for (const dechet in data.get_type_dechets()) {
+					data_dechet[dechet] = Math.floor(data.get_dechet(dechet));
+				}
+				console.log(data_dechet);
+
+				var color = d3
+					.scaleOrdinal()
+					.domain(Object.keys(data.get_type_dechets()).keys())
+					.range(colorRange);
+
+				var data_ready = pie(Object.entries(data_dechet));
+
+				var tooltip = d3
+					.select("#app")
+					.append("div")
+					.style("opacity", 0)
+					.attr("class", "tooltip")
+					.style("background-color", "white")
+					.style("border", "solid")
+					.style("border-width", "1px")
+					.style("border-radius", "5px")
+					.style("padding", "10px");
+
+				var mousemove = function (event, d) {
+					var subgroupName = data.get_type_dechets()[d.data[0]];
+					var subgroupValue = Math.floor(d.data[1]);
+					var mousePosition = d3.pointer(event);
+					tooltip
+						.style("opacity", 1)
+						.attr(
+							"style",
+							"left:" +
+								(mousePosition[0] + 125) +
+								"px; top:" +
+								(mousePosition[1] + 160) +
+								"px"
+						)
+						.html(
+							"Déchets: " +
+								subgroupName +
+								"<br>" +
+								"Valeur: " +
+								subgroupValue +
+								" tonnes" +
+								"<br>" +
+								"Pourcent: " +
+								Number(
+									(
+										(d.data[1] * 100) /
+										data.get_total_dechets()
+									).toFixed(3)
+								) +
+								"%"
+						);
+				};
+				var mouseleave = function (d) {
+					tooltip.style("opacity", 0);
+				};
+
+				// Build the pie chart: Basically, each part of the pie is a path that we build using the arc function.
+				svg.selectAll("mySlices")
+					.data(data_ready)
+					.enter()
+					.append("path")
+					.attr("d", arcGenerator)
+					.attr("fill", function (d) {
+						return color(d.data[0]);
+					})
+					.attr("stroke", "white")
+					.on("mousemove", mousemove)
+					.on("mouseleave", mouseleave)
+					.style("stroke-width", "2px")
+					.style("opacity", 0.7);
+			}
+			init();
+		</script>
+	</body>
+</html>
