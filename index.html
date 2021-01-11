@@ -28,10 +28,15 @@
   <div id="my_dataviz"></div>
   <div id="cocher"></div>
   <span class="error" id="errorCheckbox"></span>
+
+  <select id="xTypeSelect">
+    <option value=0>années</option>
+    <option value=1 selected="selected">regions</option>
+  </select>
+
   <script>
     console.clear();
     var data;
-    var myStack = [];
 
     var colorRange = ['#e41a1c', '#377eb8', '#4daf4a', '#993A80', '#800000', '#ff9900', '#98928B'];
     var margin = { top: 10, right: 300, bottom: 150, left: 70 },
@@ -81,12 +86,12 @@
       data = await load_data();
 
       // creation de la stack custom
-      myStack = dataToStack(Object.keys(data.get_type_dechets()), data.get_region_list())
+      let stack = dataToStack(Object.keys(data.get_type_dechets()), data.get_region_list(), 1)
 
       chosenDechets = Object.keys(data.get_type_dechets());
 
       // trie de la stack
-      let descOrder = myStack[myStack.length - 1].sort((a, b) => {
+      let descOrder = stack[stack.length - 1].sort((a, b) => {
         return b[1] - a[1];
       });
 
@@ -94,18 +99,17 @@
         return value[2];
       });
 
-      // update(data.get_year_list(), data.get_region_list());
-      update(Object.keys(data.get_type_dechets()), data.get_region_list());
+      update(Object.keys(data.get_type_dechets()), data.get_region_list(), 1);
 
 
       checkbox_create();
 
     }
 
-    function update(years, regions) {
+    function update(years, regions, xType) {
 
       // new stack creation
-      let newStack = dataToStack(years, regions)
+      let newStack = dataToStack(years, regions, xType)
       // console.log(newStack);
 
       // update x axis
@@ -189,7 +193,7 @@
 
     }
 
-    function dataToStack(colors, Xs) {
+    function dataToStack(colors, Xs, xType) {
 
       let newStack = [];
 
@@ -200,37 +204,42 @@
       for (let x of Xs) {
         previousValues[x] = 0;
       }
-      // years * regions
-      // for (let year of years) {
-      //   let yearStack = [];
-      //   for (let region of regions) {
-      //     let yearRegionStack = [];
-      //     yearRegionStack.push(previousValues[region]);
-      //     previousValues[region] += data.get_region(region).get_year(year).get_total_dechets();
-      //     yearRegionStack.push(previousValues[region]);
-      //     yearRegionStack.push(data.get_name_region()[region]);
-      //     yearRegionStack.push(year);
-      //     yearRegionStack.push(region);
-      //     yearStack.push(yearRegionStack);
-      //   }
-      //   newStack.push(yearStack);
-      // }
 
-      for (let type of colors) {
-        let yearStack = [];
-        for (let region of Xs) {
-          let yearRegionStack = [];
-          yearRegionStack.push(previousValues[region]);
-          previousValues[region] += data.get_region(region)[type].Total_dechets;
-          yearRegionStack.push(previousValues[region]);
-          yearRegionStack.push(data.get_name_region()[region]);
-          yearRegionStack.push(type);
-          yearRegionStack.push(region);
-          yearStack.push(yearRegionStack);
+      if (xType == 0) {
+        for (let type of colors) {
+          let yearStack = [];
+          for (let year of Xs) {
+            let yearRegionStack = [];
+            yearRegionStack.push(previousValues[year]);
+            previousValues[year] += data.get_year(year).get_dechet(type);
+            yearRegionStack.push(previousValues[year]);
+            yearRegionStack.push(year);
+            yearRegionStack.push(type);
+            yearStack.push(yearRegionStack);
+            console.log(yearRegionStack);
+          }
+          newStack.push(yearStack);
         }
-        newStack.push(yearStack);
       }
+      else if (xType == 1) {
+        for (let type of colors) {
+          let yearStack = [];
+          for (let region of Xs) {
+            let yearRegionStack = [];
+            yearRegionStack.push(previousValues[region]);
+            previousValues[region] += data.get_region(region)[type].Total_dechets;
+            yearRegionStack.push(previousValues[region]);
+            yearRegionStack.push(data.get_name_region()[region]);
+            yearRegionStack.push(type);
+            yearRegionStack.push(region);
+            yearStack.push(yearRegionStack);
+          }
+          newStack.push(yearStack);
+        }
+      }
+
       console.log(newStack);
+
       return newStack;
     }
 
@@ -287,7 +296,13 @@
           document.getElementById("errorCheckbox").innerHTML = "Gardez au moins une année sélectionnée!";
         }
       }
-      update(chosenDechets.sort(), data.get_region_list());
+
+      let xAxisType = parseInt(document.getElementById('xTypeSelect').value);
+
+      if (xAxisType == 0)
+        update(chosenDechets.sort(), data.get_year_list(), xAxisType);
+      else if (xAxisType == 1)
+        update(chosenDechets.sort(), data.get_region_list(), xAxisType);
     };
 
     function checkbox_create() {
