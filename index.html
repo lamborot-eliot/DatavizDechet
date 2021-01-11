@@ -24,15 +24,16 @@
 </style>
 
 <body>
+  <select id="xTypeSelect">
+    <option value=0>années</option>
+    <option value=1 selected="selected">regions</option>
+  </select>
   <div id="app"></div>
   <div id="my_dataviz"></div>
   <div id="cocher"></div>
   <span class="error" id="errorCheckbox"></span>
 
-  <select id="xTypeSelect">
-    <option value=0>années</option>
-    <option value=1 selected="selected">regions</option>
-  </select>
+  
 
 
 
@@ -42,7 +43,7 @@
 
     var colorRange = ['#e41a1c', '#377eb8', '#4daf4a', '#993A80', '#800000', '#ff9900', '#98928B'];
     var margin = { top: 10, right: 300, bottom: 150, left: 70 };
-    let svgWidth = 1560 - margin.left - margin.right;
+    let svgWidth = 860 - margin.left - margin.right;
     let svgHeight = 800 - margin.top - margin.bottom;
 
     var svgBarPlot = d3.select("#my_dataviz")
@@ -173,7 +174,7 @@
         .attr('class', 'legend')
         .attr('transform', function (d, i) {
           var height = legendRectSize + legendSpacing;
-          var offset = svgHeight * chosenDechets.length / 2;
+          var offset = height * chosenDechets.length / 2;
           var horz = -2 * legendRectSize + svgWidth + margin.left;
           var vert = 215 + i * height - offset;
           return 'translate(' + horz + ',' + vert + ')';
@@ -332,7 +333,9 @@
 
   </script>
 
-  <iframe id="serviceFrameSend" src="./carteValeurs.html" width="300" height="300"  frameborder="0">
+  <iframe src="./carteValeurs.html" width="800" height="800" frameborder="0"></iframe>
+  <iframe src="./camembert.html" width="800" height="800" frameborder="0"></iframe>
+
 
 </body>
 
