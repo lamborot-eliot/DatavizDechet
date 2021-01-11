@@ -34,30 +34,32 @@
     <option value=1 selected="selected">regions</option>
   </select>
 
+
+
   <script>
     console.clear();
     var data;
 
     var colorRange = ['#e41a1c', '#377eb8', '#4daf4a', '#993A80', '#800000', '#ff9900', '#98928B'];
-    var margin = { top: 10, right: 300, bottom: 150, left: 70 },
-      width = 1560 - margin.left - margin.right,
-      height = 800 - margin.top - margin.bottom;
+    var margin = { top: 10, right: 300, bottom: 150, left: 70 };
+    let svgWidth = 1560 - margin.left - margin.right;
+    let svgHeight = 800 - margin.top - margin.bottom;
 
-    var svg = d3.select("#my_dataviz")
+    var svgBarPlot = d3.select("#my_dataviz")
       .append("svg")
       .attr('id', 'svg')
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
+      .attr("width", svgWidth + margin.left + margin.right)
+      .attr("height", svgHeight + margin.top + margin.bottom)
       .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     // Add X axis
     var x = d3.scaleBand()
-      .range([0, width])
+      .range([0, svgWidth])
       .padding([0.2]);
 
-    svg.append("g")
-      .attr("transform", "translate(0," + height + ")")
+    svgBarPlot.append("g")
+      .attr("transform", "translate(0," + svgHeight + ")")
       .attr('class', 'axis x')
       .call(d3.axisBottom(x).tickSizeOuter(0))
       .selectAll("text")
@@ -68,9 +70,9 @@
 
     // Add Y axis
     var y = d3.scaleLinear()
-      .range([height, 0]);
+      .range([svgHeight, 0]);
 
-    svg.append("g")
+    svgBarPlot.append("g")
       .attr('class', 'axis y')
       .call(d3.axisLeft(y));
 
@@ -127,18 +129,18 @@
       // update y axis
       let maxY = d3.max(newStack[newStack.length - 1], (d) => { return d3.max(d); });
       y.domain([0, maxY * 1.2]);
-      svg.select(".axis.y")
+      svgBarPlot.select(".axis.y")
         .transition()
         .duration(750)
         .call(d3.axisLeft(y))
 
 
       // remove all bargroups
-      svg.selectAll(".bar-group").remove();
+      svgBarPlot.selectAll(".bar-group").remove();
 
       // DATA JOIN
       // Join new data with old elements, if any.
-      let newBarGroups = svg.selectAll('.bar-group')
+      let newBarGroups = svgBarPlot.selectAll('.bar-group')
         .data(newStack)
         .enter().append('g')
         .classed('bar-group', true)
@@ -163,16 +165,16 @@
       // add legend   
       let legendRectSize = 20;
       let legendSpacing = 20;
-      svg.selectAll('.legend').remove();
-      var legend = svg.selectAll('.legend')
+      svgBarPlot.selectAll('.legend').remove();
+      var legend = svgBarPlot.selectAll('.legend')
         .data(chosenDechets.sort())
         .enter()
         .append('g')
         .attr('class', 'legend')
         .attr('transform', function (d, i) {
           var height = legendRectSize + legendSpacing;
-          var offset = height * chosenDechets.length / 2;
-          var horz = -2 * legendRectSize + width + margin.left;
+          var offset = svgHeight * chosenDechets.length / 2;
+          var horz = -2 * legendRectSize + svgWidth + margin.left;
           var vert = 215 + i * height - offset;
           return 'translate(' + horz + ',' + vert + ')';
         });
@@ -329,6 +331,9 @@
     }
 
   </script>
+
+  <iframe id="serviceFrameSend" src="./carteValeurs.html" width="300" height="300"  frameborder="0">
+
 </body>
 
 </html>
