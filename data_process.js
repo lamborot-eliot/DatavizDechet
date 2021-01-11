@@ -5,7 +5,7 @@ async function load_data() {
 	var data = {
 		"Total_dechets": 0
 	};
-	let data_ = await d3.csv("https://koumoul.com/s/data-fair/api/v1/datasets/sinoe-(r)-destination-des-dechets-collectes-en-decheterie-par-type-de-traitement/full");
+	let data_ = await d3.csv("dataFull.csv");
 	for (o of data_) {
 		if (parseInt(o.C_REGION) == 97 || parseInt(o.C_REGION) == 94) continue;
 
