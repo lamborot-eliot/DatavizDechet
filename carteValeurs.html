@@ -81,7 +81,8 @@
 
     //d3.csv("http://localhost:8888/data.csv").then(function (data) {
     //color.domain([0, 2000000]); //regle l'echelle ici
-    d3.json("regions-version-simplifiee.geojson").then(function (json) {
+    //d3.json("regions-version-simplifiee.geojson").then(function (json) {
+      d3.json("https://raw.githubusercontent.com/lamborot-eliot/DatavizDechet/main/departements-version-simplifiee.geojson").then(function (json) {
       //On fusionne les donnees avec le GeoJSON des regions
 
       load_data().then((data) => {
