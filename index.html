@@ -173,7 +173,7 @@
         .attr('class', 'legend')
         .attr('transform', function (d, i) {
           var height = legendRectSize + legendSpacing;
-          var offset = svgHeight * chosenDechets.length / 2;
+          var offset = height * chosenDechets.length / 2;
           var horz = -2 * legendRectSize + svgWidth + margin.left;
           var vert = 215 + i * height - offset;
           return 'translate(' + horz + ',' + vert + ')';
