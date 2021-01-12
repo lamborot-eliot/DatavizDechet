@@ -7,22 +7,6 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css" />
   <script type="text/javascript" src="data_process.js"></script>
 </head>
-<style>
-  .error {
-    color: #D8000C;
-    background-color: #FFBABA;
-  }
-
-  div.tooltip {
-    color: #222;
-    background-color: #fff;
-    padding: 0.5em;
-    text-shadow: #f5f5f5 0 1px 0;
-    border-radius: 2px;
-    opacity: 0.9;
-    position: absolute;
-  }
-</style>
 
 <body>
   <section class="section">
@@ -46,344 +30,35 @@
               Pie Chart
             </button>
           </div>
-          <div id="barplot">
-            <select id="xTypeSelect">
-              <option value=0>années</option>
-              <option value=1 selected="selected">regions</option>
-            </select>
-            <div id="app"></div>
-            <div id="my_dataviz"></div>
-            <div id="cocher"></div>
-            <span class="error" id="errorCheckbox"></span>
-          </div>
-          <div id="map"><iframe src="./carteValeurs.html" width="800" height="800" frameborder="0"></iframe></div>
-
-          <div id="piechart"><iframe src="./camembert.html" width="800" height="800" frameborder="0"></iframe></div>
+          <div id="barplot"><iframe src="./stackedBarPlot.html" width="1500" height="1000" frameborder="0"></iframe></div>
+          <div id="map"><iframe src="./carteValeurs.html" width="1500" height="800" frameborder="0"></iframe></div>
+          <div id="piechart"><iframe src="./camembert.html" width="1500" height="800" frameborder="0"></iframe></div>
         </div>
       </div>
     </div>
   </section>
 
 
-
-
-
-
-
   <script>
     buttonChange("barplot");
-      function hideall() {
-        $("#barplot").hide();
-        $("#map").hide();
-        $("#piechart").hide();
-      }
-      function unselectall() {
-        $("#button_barplot").removeClass("is-primary is-selected");
-        $("#button_map").removeClass("is-primary is-selected");
-        $("#button_piechart").removeClass("is-primary is-selected");
-      }
-      function buttonChange(id) {
-        hideall();
-        unselectall();
-        $("#" + id).show();
-        $("#button_" + id).addClass("is-primary is-selected");
-      }
-
-    console.clear();
-    var data;
-
-    var colorRange = ['#e41a1c', '#377eb8', '#4daf4a', '#993A80', '#800000', '#ff9900', '#98928B'];
-    var margin = { top: 10, right: 300, bottom: 150, left: 70 };
-    let svgWidth = 860 - margin.left - margin.right;
-    let svgHeight = 800 - margin.top - margin.bottom;
-
-    var svgBarPlot = d3.select("#my_dataviz")
-      .append("svg")
-      .attr('id', 'svg')
-      .attr("width", svgWidth + margin.left + margin.right)
-      .attr("height", svgHeight + margin.top + margin.bottom)
-      .append("g")
-      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-    // Add X axis
-    var x = d3.scaleBand()
-      .range([0, svgWidth])
-      .padding([0.2]);
-
-    svgBarPlot.append("g")
-      .attr("transform", "translate(0," + svgHeight + ")")
-      .attr('class', 'axis x')
-      .call(d3.axisBottom(x).tickSizeOuter(0))
-      .selectAll("text")
-      .style("text-anchor", "end")
-      .attr("dx", "-.8em")
-      .attr("dy", ".15em")
-      .attr("transform", "rotate(-65)")
-
-    // Add Y axis
-    var y = d3.scaleLinear()
-      .range([svgHeight, 0]);
-
-    svgBarPlot.append("g")
-      .attr('class', 'axis y')
-      .call(d3.axisLeft(y));
-
-    // color palette = one color per subgroup
-    var color = d3.scaleOrdinal()
-      .range(colorRange)
-
-
-
-    async function init() {
-
-      // recuperation des données
-      data = await load_data();
-
-      // creation de la stack custom
-      let stack = dataToStack(Object.keys(data.get_type_dechets()), data.get_region_list(), 1)
-
-      chosenDechets = Object.keys(data.get_type_dechets());
-
-      // trie de la stack
-      let descOrder = stack[stack.length - 1].sort((a, b) => {
-        return b[1] - a[1];
-      });
-
-      let descOrderString = descOrder.map((value, index) => {
-        return value[2];
-      });
-
-      update(Object.keys(data.get_type_dechets()), data.get_region_list(), 1);
-
-
-      checkbox_create();
-
+    function hideall() {
+      $("#barplot").hide();
+      $("#map").hide();
+      $("#piechart").hide();
     }
-
-    function update(years, regions, xType) {
-
-      // new stack creation
-      let newStack = dataToStack(years, regions, xType)
-      // console.log(newStack);
-
-      // update x axis
-      x.domain(newStack[0].map((value, index) => { return value[2] }));
-      d3.select(".axis.x")
-        .transition()
-        .duration(750)
-        .call(d3.axisBottom(x).tickSizeOuter(0))
-        .selectAll("text")
-        .style("text-anchor", "end")
-        .attr("dx", "-.8em")
-        .attr("dy", ".15em")
-        .attr("transform", "rotate(-65)")
-
-      // update y axis
-      let maxY = d3.max(newStack[newStack.length - 1], (d) => { return d3.max(d); });
-      y.domain([0, maxY * 1.2]);
-      svgBarPlot.select(".axis.y")
-        .transition()
-        .duration(750)
-        .call(d3.axisLeft(y))
-
-
-      // remove all bargroups
-      svgBarPlot.selectAll(".bar-group").remove();
-
-      // DATA JOIN
-      // Join new data with old elements, if any.
-      let newBarGroups = svgBarPlot.selectAll('.bar-group')
-        .data(newStack)
-        .enter().append('g')
-        .classed('bar-group', true)
-        .attr("fill", function (d) {
-          //console.log(d[0][3]);
-          return color(d[0][3]);
-        });
-
-
-      // create new bars
-      newBarGroups
-        .selectAll('rect')
-        .data(function (d) { return d; })
-        .enter().append('rect')
-        .attr("x", function (d) { return x(d[2]); })
-        .attr("y", function (d) { return y(d[1]); })
-        .attr("height", function (d) { return y(d[0]) - y(d[1]); })
-        .attr("width", x.bandwidth())
-        .on("mousemove", mousemove)
-        .on("mouseleave", mouseleave);
-
-      // add legend   
-      let legendRectSize = 20;
-      let legendSpacing = 20;
-      svgBarPlot.selectAll('.legend').remove();
-      var legend = svgBarPlot.selectAll('.legend')
-        .data(chosenDechets.sort())
-        .enter()
-        .append('g')
-        .attr('class', 'legend')
-        .attr('transform', function (d, i) {
-          var height = legendRectSize + legendSpacing;
-          var offset = height * chosenDechets.length / 2;
-          var horz = -2 * legendRectSize + svgWidth + margin.left;
-          var vert = 215 + i * height - offset;
-          return 'translate(' + horz + ',' + vert + ')';
-        });
-
-      legend.append('rect')
-        .attr('width', legendRectSize)
-        .attr('height', legendRectSize)
-        .style('fill', color)
-        .style('stroke', color);
-
-      legend.append('text')
-        .attr('x', legendRectSize + legendSpacing)
-        .attr('y', 16 + legendRectSize - legendSpacing)
-        .data(chosenDechets.reverse().sort())
-        .text(function (d, i) {
-          return data.get_type_dechets()[d];
-        });
-
+    function unselectall() {
+      $("#button_barplot").removeClass("is-primary is-selected");
+      $("#button_map").removeClass("is-primary is-selected");
+      $("#button_piechart").removeClass("is-primary is-selected");
     }
-
-    function dataToStack(colors, Xs, xType) {
-
-      let newStack = [];
-
-      // creation de la stack custom
-      let previousValues = {};
-
-      // init previous values dict with zeros
-      for (let x of Xs) {
-        previousValues[x] = 0;
-      }
-
-      if (xType == 0) {
-        for (let type of colors) {
-          let yearStack = [];
-          for (let year of Xs) {
-            let yearRegionStack = [];
-            yearRegionStack.push(previousValues[year]);
-            previousValues[year] += data.get_year(year).get_dechet(type);
-            yearRegionStack.push(previousValues[year]);
-            yearRegionStack.push(year);
-            yearRegionStack.push(type);
-            yearStack.push(yearRegionStack);
-            console.log(yearRegionStack);
-          }
-          newStack.push(yearStack);
-        }
-      }
-      else if (xType == 1) {
-        for (let type of colors) {
-          let yearStack = [];
-          for (let region of Xs) {
-            let yearRegionStack = [];
-            yearRegionStack.push(previousValues[region]);
-            previousValues[region] += data.get_region(region)[type].Total_dechets;
-            yearRegionStack.push(previousValues[region]);
-            yearRegionStack.push(data.get_name_region()[region]);
-            yearRegionStack.push(type);
-            yearRegionStack.push(region);
-            yearStack.push(yearRegionStack);
-          }
-          newStack.push(yearStack);
-        }
-      }
-
-      console.log(newStack);
-
-      return newStack;
-    }
-
-    init()
-  </script>
-
-  <script>
-    var tooltip = d3.select("#my_dataviz")
-      .append("div")
-      .style("opacity", 0)
-      .attr("class", "tooltip")
-      .style("background-color", "white")
-      .style("border", "solid")
-      .style("border-width", "1px")
-      .style("border-radius", "5px")
-      .style("padding", "10px");
-
-    var mousemove = function (event, d) {
-      var subgroupName = d[2];
-      var subgroupValue = Math.floor(d[1] - d[0]);
-      var mousePosition = d3.pointer(event);
-      tooltip
-        .style("opacity", 1)
-        .attr(
-          "style",
-          "left:" +
-          (mousePosition[0] + 15) +
-          "px; top:" +
-          (mousePosition[1] - 35) +
-          "px"
-        )
-        .html("Région: " + subgroupName + "<br>" + "Valeur: " + subgroupValue + " tonnes")
-    }
-    var mouseleave = function (d) {
-      tooltip
-        .style("opacity", 0)
-    }
-
-    function cocher_case(cas) {
-      console.log(cas);
-      var checkbox = document.getElementById(cas);
-      console.log(checkbox);
-      if (checkbox.checked == true) {
-        if (!chosenDechets.includes(cas)) {
-          chosenDechets.push(cas);
-        }
-        document.getElementById("errorCheckbox").innerHTML = "";
-      } else {
-        if (chosenDechets.length > 1) {
-          var pos = chosenDechets.indexOf(cas);
-          chosenDechets.splice(pos, 1);
-        } else {
-          checkbox.checked = true;
-          document.getElementById("errorCheckbox").innerHTML = "Gardez au moins une année sélectionnée!";
-        }
-      }
-
-      let xAxisType = parseInt(document.getElementById('xTypeSelect').value);
-
-      if (xAxisType == 0)
-        update(chosenDechets.sort(), data.get_year_list(), xAxisType);
-      else if (xAxisType == 1)
-        update(chosenDechets.sort(), data.get_region_list(), xAxisType);
-    };
-
-    function checkbox_create() {
-
-      var subgroups_dur = Object.keys(data.get_type_dechets());
-      var list_cocher = document.createElement('div');
-
-      subgroups_dur.forEach(function (grp) {
-        var cb = document.createElement('INPUT');
-        cb.setAttribute("type", "checkbox");
-        cb.setAttribute("id", grp);
-        cb.setAttribute("name", grp);
-        cb.setAttribute("checked", true);
-        cb.setAttribute("onclick", "cocher_case('" + grp + "')");
-        list_cocher.appendChild(cb);
-        var label = document.createElement('label');
-        label.setAttribute("for", grp);
-        label.textContent = data.get_type_dechets()[grp];
-        list_cocher.appendChild(label);
-      });
-
-      var cocher = document.querySelector('#cocher');
-      app.appendChild(list_cocher);
+    function buttonChange(id) {
+      hideall();
+      unselectall();
+      $("#" + id).show();
+      $("#button_" + id).addClass("is-primary is-selected");
     }
 
   </script>
-
 
 </body>
 
