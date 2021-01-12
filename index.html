@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <script src="https://d3js.org/d3.v6.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css" />
   <script type="text/javascript" src="data_process.js"></script>
 </head>
 <style>
@@ -24,20 +25,70 @@
 </style>
 
 <body>
-  <select id="xTypeSelect">
-    <option value=0>années</option>
-    <option value=1 selected="selected">regions</option>
-  </select>
-  <div id="app"></div>
-  <div id="my_dataviz"></div>
-  <div id="cocher"></div>
-  <span class="error" id="errorCheckbox"></span>
+  <section class="section">
+    <div class="container">
+      <div class="columns">
+        <div class="column is-offset-one-fifth">
+          <h1 class="title is-1">
+            Gestion des déchets
+          </h1>
+          <p class="subtitle">Comment sont gérés les déchets ?</p>
 
-  
+          <br /><br />
+          <div class="buttons has-addons">
+            <button id="button_barplot" class="button is-primary is-selected" onclick="buttonChange('barplot')">
+              Bar plot
+            </button>
+            <button id="button_map" class="button" onclick="buttonChange('map')">
+              Carte
+            </button>
+            <button id="button_piechart" class="button" onclick="buttonChange('piechart')">
+              Pie Chart
+            </button>
+          </div>
+          <div id="barplot">
+            <select id="xTypeSelect">
+              <option value=0>années</option>
+              <option value=1 selected="selected">regions</option>
+            </select>
+            <div id="app"></div>
+            <div id="my_dataviz"></div>
+            <div id="cocher"></div>
+            <span class="error" id="errorCheckbox"></span>
+          </div>
+          <div id="map"><iframe src="./carteValeurs.html" width="800" height="800" frameborder="0"></iframe></div>
+
+          <div id="piechart"><iframe src="./camembert.html" width="800" height="800" frameborder="0"></iframe></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+
+
 
 
 
   <script>
+    buttonChange("barplot");
+      function hideall() {
+        $("#barplot").hide();
+        $("#map").hide();
+        $("#piechart").hide();
+      }
+      function unselectall() {
+        $("#button_barplot").removeClass("is-primary is-selected");
+        $("#button_map").removeClass("is-primary is-selected");
+        $("#button_piechart").removeClass("is-primary is-selected");
+      }
+      function buttonChange(id) {
+        hideall();
+        unselectall();
+        $("#" + id).show();
+        $("#button_" + id).addClass("is-primary is-selected");
+      }
+
     console.clear();
     var data;
 
@@ -332,9 +383,6 @@
     }
 
   </script>
-
-  <iframe src="./carteValeurs.html" width="800" height="800" frameborder="0"></iframe>
-  <iframe src="./camembert.html" width="800" height="800" frameborder="0"></iframe>
 
 
 </body>
