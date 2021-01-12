@@ -28,29 +28,25 @@
 
     <div class="control">
         <label class="radio">
-            <input type="radio" name="xType" value=0>
+            <input type="radio" name="xType" value=0 onclick="getParamsAndUpdate()">
             Années
         </label>
         <label class="radio">
-            <input type="radio" name="xType" value=1 checked>
+            <input type="radio" name="xType" value=1 onclick="getParamsAndUpdate()" checked>
             Régions
         </label>
         <label class="radio">
-            <input type="radio" name="xType" value=2 disabled>
+            <input type="radio" name="xType" value=2 onclick="getParamsAndUpdate()" disabled>
             Traitements
         </label>
     </div>
-    
+
 
 
     <div id="app"></div>
     <div id="my_dataviz"></div>
     <div id="cocher"></div>
     <span class="error" id="errorCheckbox"></span>
-
-    </div>
-    </div>
-
 
 
     <script>
@@ -75,7 +71,8 @@
         console.clear();
         var data;
 
-        var colorRange = ['#e41a1c', '#377eb8', '#4daf4a', '#993A80', '#800000', '#ff9900', '#98928B'];
+        // var colorRange = ['#e41a1c', '#377eb8', '#4daf4a', '#993A80', '#800000', '#ff9900', '#98928B'];
+        let colorRange = ['#eF716F', '#b6b4dF', '#a8d67B', '#dFaB85', '#dFcE85', '#93cEdF', '#c8c2bB'];
         var margin = { top: 10, right: 300, bottom: 150, left: 70 };
         let svgWidth = 860 - margin.left - margin.right;
         let svgHeight = 800 - margin.top - margin.bottom;
@@ -143,10 +140,10 @@
 
         }
 
-        function update(years, regions, xType) {
+        function update(colors, Xs, xType) {
 
             // new stack creation
-            let newStack = dataToStack(years, regions, xType)
+            let newStack = dataToStack(colors, Xs, xType)
             // console.log(newStack);
 
             // update x axis
@@ -334,12 +331,7 @@
                 }
             }
 
-            let xAxisType = parseInt($('input[name=xType]:checked').val());
-
-            if (xAxisType == 0)
-                update(chosenDechets.sort(), data.get_year_list(), xAxisType);
-            else if (xAxisType == 1)
-                update(chosenDechets.sort(), data.get_region_list(), xAxisType);
+            getParamsAndUpdate();
         };
 
         function checkbox_create() {
@@ -363,6 +355,15 @@
 
             var cocher = document.querySelector('#cocher');
             app.appendChild(list_cocher);
+        }
+
+        function getParamsAndUpdate() {
+            let xAxisType = parseInt($('input[name=xType]:checked').val());
+
+            if (xAxisType == 0)
+                update(chosenDechets.sort(), data.get_year_list(), xAxisType);
+            else if (xAxisType == 1)
+                update(chosenDechets.sort(), data.get_region_list(), xAxisType);
         }
 
     </script>
