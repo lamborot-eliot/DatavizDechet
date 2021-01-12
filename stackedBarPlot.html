@@ -44,8 +44,10 @@
 
 
     <div id="app"></div>
-    <div id="my_dataviz"></div>
-    <div id="cocher"></div>
+    <div class="columns">
+    	<div class="column" id="my_dataviz"></div>
+    	<div class="column" id="cocher"></div>
+    </div>
     <span class="error" id="errorCheckbox"></span>
 
 
@@ -337,24 +339,26 @@
         function checkbox_create() {
 
             var subgroups_dur = Object.keys(data.get_type_dechets());
-            var list_cocher = document.createElement('div');
-
+            var list_cocher = document.createElement('ul');
+		
             subgroups_dur.forEach(function (grp) {
+		var li = document.createElement('li');
                 var cb = document.createElement('INPUT');
                 cb.setAttribute("type", "checkbox");
                 cb.setAttribute("id", grp);
                 cb.setAttribute("name", grp);
                 cb.setAttribute("checked", true);
                 cb.setAttribute("onclick", "cocher_case('" + grp + "')");
-                list_cocher.appendChild(cb);
+                li.appendChild(cb);
                 var label = document.createElement('label');
                 label.setAttribute("for", grp);
                 label.textContent = data.get_type_dechets()[grp];
-                list_cocher.appendChild(label);
+                li.appendChild(label);
+		list_cocher.appendChild(li);
             });
 
             var cocher = document.querySelector('#cocher');
-            app.appendChild(list_cocher);
+            cocher.appendChild(list_cocher);
         }
 
         function getParamsAndUpdate() {
