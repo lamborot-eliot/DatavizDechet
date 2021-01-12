@@ -3,7 +3,9 @@ async function load_data() {
 	var services = {};
 	var dechets = {};
 	var data = {
-		"Total_dechets": 0
+		"Total_dechets": 0,
+		"services": {},
+		"dechets": {}
 	};
 	let data_ = await d3.csv("https://koumoul.com/s/data-fair/api/v1/datasets/sinoe-(r)-destination-des-dechets-collectes-en-decheterie-par-type-de-traitement/full");
 	for (o of data_) {
@@ -81,7 +83,17 @@ async function load_data() {
 			data[o.C_REGION]["services"][o.C_TYP_REG_SERVICE] = 0;
 		}
 
+		if (!(o.C_TYP_REG_DECHET in data.dechets)) {
+			data["dechets"][o.C_TYP_REG_DECHET] = 0;
+		}
+
+		if (!(o.C_TYP_REG_SERVICE in data.services)) {
+			data["services"][o.C_TYP_REG_SERVICE] = 0;
+		}
+
 		var dechet_add = parseFloat(o.TONNAGE_DECH);
+		data["services"][o.C_TYP_REG_SERVICE] += dechet_add;
+		data["dechets"][o.C_TYP_REG_DECHET] += dechet_add;
 		data[o.C_REGION]["services"][o.C_TYP_REG_SERVICE] += dechet_add;
 		data[o.ANNEE]["services"][o.C_TYP_REG_SERVICE] += dechet_add;
 		data[o.C_REGION][o.ANNEE]["services"][o.C_TYP_REG_SERVICE] += dechet_add;
@@ -106,10 +118,12 @@ async function load_data() {
 		}
 
 	}
-	data.services = services;
-	data.dechets = dechets;
+	data.services_name = services;
+	data.dechets_name = dechets;
 	// FUNCTIONS 
 	data.get_total_dechets = function () { return this.Total_dechets };
+	data.get_dechet = function (type_dechet) { return this.dechets[type_dechet] };
+	data.get_service = function (type_service) { return this.dechets[type_service] };
 	data.get_region_list = function () { return [11, 24, 27, 28, 32, 44, 52, 53, 75, 76, 84, 93] };
 	data.get_year_list = function () { return [2009, 2011, 2013, 2015, 2017] };
 	data.get_region = function (region) {
@@ -130,8 +144,8 @@ async function load_data() {
 		else return this[region];
 	};
 	data.get_year = function (year) { return this[year] };
-	data.get_type_dechets = function () { return this.dechets };
-	data.get_type_services = function () { return this.services };
+	data.get_type_dechets = function () { return this.dechets_name };
+	data.get_type_services = function () { return this.services_name };
 	data.get_name_region = function () {
 		return {
 			11: "Ile-de-France",
