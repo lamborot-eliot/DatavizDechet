@@ -17,8 +17,9 @@
             Gestion des déchets
           </h1>
           <p class="subtitle">Comment sont gérés les déchets ?</p>
+          <p>Réalisé par Lucas VIGIER, Mathieu LE RAL, Eliot LAMBOROT, Julien GINEYS </p> <br><br> 
 	  <div>
-		<h2 class="subtitle">Contextualisation</h2>
+		<h2 class="title is-4">Contextualisation</h2>
 		<p> Ce projet vise à apporter une visualisation claire et intuitive du traitement des déchets en France.<br>
 		Mais aussi de pouvoir comparer leur émission en fonction des années, des régions et des services qui les traitent.
 		</p>
@@ -26,20 +27,21 @@
 		<br>
 	  </div>
 	  <div>
-		<h2 class="subtitle">Visualisation</h2>
-		<p class="is-1"> Afin de fournir une visualisation efficace, nous avons travaillé sur 3 types de graphes.</p>
+		<h2 class="title is-4">Visualisation</h2>
+    <p class="is-1"> Afin de fournir une visualisation efficace, nous avons travaillé sur 3 types de graphes.<br>
+    Nous avons pour cela utilisé la bibliothèque d3js couplé à jquery et bulma.</p>
 		<br>
-		<h3 class="subtitle">1. Diagramme en baton superposés.</h3>
+		<h3 class="title is-4">1. Diagramme en baton superposés.</h3>
 		<p class="is-1">Ce diagramme nous permet de comparer les différentes régions, années, ou services en fonction du type de données traitées.
 		<br>Il permet aussi à l'utilisateur d'avoir une estimation de la quantité de chaque type de déchets.</p>
 		<br>
 		<br>
-		<h3 class="subtitle">2. Carte</h3>
+		<h3 class="title is-4">2. Carte</h3>
 		<p class="is-1">La carte nous permet de visualiser l'évolution de la quantité de déchets de chaque région en fonction des années.
 		<br>On peut également y appliquer un filtre pour séléctionner uniquement un certain type de déchet ou service.</p>
 		<br>	
 		<br>
-		<h3 class="subtitle">3. Graphique à secteurs (camembert?)</h3>
+		<h3 class="title is-4">3. Graphique à secteurs</h3>
 		<p class="is-1">Il nous permet d'avoir une idée plus précise de la part de chaque déchet, sur le nombre de déchet total.
 		</p>
 	  </div>
@@ -47,16 +49,17 @@
   	  <br>
 	  <br>
 	  <div>
-		<h2 class="subtitle">Données</h2>
+    <h2 class="title is-5">Données</h2>
+    <a href="https://data.ademe.fr/datasets/sinoe-(r)-destination-des-dechets-collectes-en-decheterie-par-type-de-traitement">Lien des données</a> 
 		<p class="is-1"> Nous avons sélectionné un jeu de données publiques mis en place par l’Ademe (Agence de la transition
 		écologique),<br> composé des tonnages de déchets collectés en déchèterie, par département,
 		caractérisés par type de déchets et de traitements, pour toutes les années impaires entre
 		2009 et 2019.
-		<br>(Explication de chaque déchet/type de déchet?)
+		<br>
 		</p>
 		<br>
 		<br>
-		<h3 class="subtitle">Traitement des données</h3>
+		<h3 class="title is-5">Traitement des données</h3>
 		<p class="is-1">Nous avons d'utiliser d'utiliser des données sous forme de csv, chaque ligne correspond à un département, une année, le type de déchet et comment les déchets ont été traité.<br> 
       Cela peut amener à de la redondance nous avons utilisé un algorithme de traitement de données afin de regrouper les données par région, par année,<br> par année et par region et aussi regrouper
       les déchets cumulés par types de déchets et types de traitements.
