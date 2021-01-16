@@ -38,6 +38,7 @@ async function load_data() {
 			data[o.C_REGION][o.ANNEE]["services"] = {};
 			data[o.C_REGION][o.ANNEE]["get_service"] = function (service) { return this.services[service] };
 			data[o.C_REGION][o.ANNEE]["get_dechet"] = function (dechet) { return this[dechet]["Total_dechets"] };
+			data[o.C_REGION][o.ANNEE]["get_dechet_service"] = function (dechet,service) { return this[dechet]["services"][service] };
 		}
 
 		if (!(o.C_TYP_REG_DECHET in data[o.C_REGION])) {
@@ -181,6 +182,6 @@ async function load_data() {
 	};
 
 
-	console.log(data.get_region(11).get_year(2009).get_dechet("02B"));
+	console.log(data.get_region(11).get_year(2009).get_dechet_service("02B","02A"));
 	return data;
 }
