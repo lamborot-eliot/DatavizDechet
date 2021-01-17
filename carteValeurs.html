@@ -110,7 +110,8 @@
       .range(["#edf8e9", "#bae4b3", "#74c476", "#31a354", "#006d2c"]);
 
     var legend = d3.legendColor().scale(color);
-    var g = svg.append("g").call(legend);
+    //var g = svg.append("g").call(legend);
+    var g = svg.append("g"); //Test
     //d3.csv("http://localhost:8888/data.csv").then(function (data) {
     d3.json(
       "https://raw.githubusercontent.com/lamborot-eliot/DatavizDechet/gh-pages/regions-version-simplifiee.geojson"
