@@ -22,6 +22,45 @@
 	</style>
 	<body>
 		<div id="app"></div>
+		<div class="control">
+			<label class="radio">
+				<input
+					type="radio"
+					name="choose_box"
+					value="0"
+					onclick="getRadioAndUpdate()"
+					checked
+				/>
+				Déchets
+			</label>
+			<label class="radio">
+				<input
+					type="radio"
+					name="choose_box"
+					value="1"
+					onclick="getRadioAndUpdate()"
+				/>
+				Années
+			</label>
+			<label class="radio">
+				<input
+					type="radio"
+					name="choose_box"
+					value="2"
+					onclick="getRadioAndUpdate()"
+				/>
+				Régions
+			</label>
+			<label class="radio">
+				<input
+					type="radio"
+					name="choose_box"
+					value="3"
+					onclick="getRadioAndUpdate()"
+				/>
+				Traitements
+			</label>
+		</div>
 
 		<script>
 			console.clear();
@@ -42,34 +81,112 @@
 					"translate(" + width / 2 + "," + height / 2 + ")"
 				);
 
-			var pie = d3.pie().value(function (d) {
-				return d[1];
-			});
-
-			var colorRange = [
-				"#e41a1c",
-				"#377eb8",
-				"#4daf4a",
-				"#993A80",
-				"#800000",
-				"#ff9900",
-				"#98928B"
-			];
-
 			var arcGenerator = d3.arc().innerRadius(0).outerRadius(radius);
 
 			async function init() {
 				data = await load_data();
+				//console.log(data.get_type_dechets());
+				//console.log(data.get_type_services());
+				//console.log(data.get_region_list());
+				//console.log(data.get_year_list());
+				//console.log(data);
+				update(0);
+			}
 
-				var data_dechet = {};
-				for (const dechet in data.get_type_dechets()) {
-					data_dechet[dechet] = Math.floor(data.get_dechet(dechet));
-				}
+			function update(option) {
+				let data_dechet = {};
 				console.log(data_dechet);
+				let data_type = null;
+				if (option == 0) {
+					data_type = data.get_type_dechets();
+					for (const dechet in data_type) {
+						data_dechet[dechet] = Math.floor(
+							data.get_dechet(dechet)
+						);
+					}
+					var colorRange = [
+						"#e41a1c",
+						"#377eb8",
+						"#4daf4a",
+						"#993A80",
+						"#800000",
+						"#ff9900",
+						"#98928B"
+					];
+				} else if (option == 1) {
+					data_type = data.get_year_list();
+					for (const dechet of data_type) {
+						console.log(dechet);
+						data_dechet[dechet] = Math.floor(
+							data.get_year(dechet).Total_dechets
+						);
+					}
+					var colorRange = [
+						"#e41a1c",
+						"#377eb8",
+						"#4daf4a",
+						"#993A80",
+						"#800000"
+					];
+				} else if (option == 2) {
+					data_type = data.get_region_list();
+					for (const dechet of data_type) {
+						console.log(dechet);
+						data_dechet[dechet] = Math.floor(
+							data.get_region(dechet).Total_dechets
+						);
+					}
+					var colorRange = [
+						"#e41a1c",
+						"#377eb8",
+						"#4daf4a",
+						"#993A80",
+						"#800000",
+						"#ff9900",
+						"#98928B",
+						"#f56042",
+						"#87f542",
+						"#42f5a1",
+						"#42ddf5",
+						"#f54266"
+					];
+				} else if (option == 3) {
+					data_type = data.get_type_services();
+					for (const dechet in data_type) {
+						data_dechet[dechet] = Math.floor(
+							data.get_service(dechet)
+						);
+					}
+					var colorRange = [
+						"#e41a1c",
+						"#377eb8",
+						"#4daf4a",
+						"#993A80",
+						"#800000",
+						"#ff9900",
+						"#98928B"
+					];
+				}
+
+				console.log(data_dechet);
+				console.log(data_type);
+
+				var pie = d3.pie().value(function (d) {
+					return d[1];
+				});
+
+				/* var pie = d3
+					.pie()
+					.value(function (d) {
+						return d[1];
+					})
+					.sort(function (a, b) {
+						return d3.ascending(a[1], b[1]);
+					}); */
 
 				var color = d3
 					.scaleOrdinal()
-					.domain(Object.keys(data.get_type_dechets()).keys())
+					.domain(Object.keys(data_type).keys())
 					.range(colorRange);
 
 				var data_ready = pie(Object.entries(data_dechet));
@@ -86,7 +203,22 @@
 					.style("padding", "10px");
 
 				var mousemove = function (event, d) {
-					var subgroupName = data.get_type_dechets()[d.data[0]];
+					var subgroupName = "";
+					switch (option) {
+						case 0:
+							subgroupName = data_type[d.data[0]];
+							break;
+						case 1:
+							subgroupName = d.data[0];
+							break;
+						case 2:
+							subgroupName = data.get_name_region()[d.data[0]];
+							break;
+						case 3:
+							subgroupName = data_type[d.data[0]];
+							break;
+					}
+					console.log(d.data[0]);
 					var subgroupValue = Math.floor(d.data[1]);
 					var mousePosition = d3.pointer(event);
 					tooltip
@@ -100,8 +232,7 @@
 								"px"
 						)
 						.html(
-							"Déchets: " +
-								subgroupName +
+							subgroupName +
 								"<br>" +
 								"Valeur: " +
 								subgroupValue +
@@ -121,8 +252,10 @@
 					tooltip.style("opacity", 0);
 				};
 
+				var u = svg.selectAll("path").data(data_ready);
+
 				// Build the pie chart: Basically, each part of the pie is a path that we build using the arc function.
-				svg.selectAll("mySlices")
+				/* svg.selectAll("mySlices")
 					.data(data_ready)
 					.enter()
 					.append("path")
@@ -134,7 +267,33 @@
 					.on("mousemove", mousemove)
 					.on("mouseleave", mouseleave)
 					.style("stroke-width", "2px")
-					.style("opacity", 0.7);
+					.style("opacity", 0.7); */
+				u.enter()
+					.append("path")
+					.merge(u)
+					//.transition()
+					//.duration(1000)
+					.attr("d", arcGenerator)
+					.attr("fill", function (d) {
+						return color(d.data[0]);
+					})
+					.attr("stroke", "white")
+					.on("mousemove", mousemove)
+					.on("mouseleave", mouseleave)
+					.style("stroke-width", "2px")
+					.style("opacity", 1);
+
+				u.exit().remove();
+			}
+
+			function getRadioAndUpdate() {
+				let radio_type = parseInt(
+					$("input[name=choose_box]:checked").val()
+				);
+				if (radio_type == 0) update(0);
+				else if (radio_type == 1) update(1);
+				else if (radio_type == 2) update(2);
+				else if (radio_type == 3) update(3);
 			}
 			init();
 		</script>
