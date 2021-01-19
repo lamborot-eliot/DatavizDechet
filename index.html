@@ -12,7 +12,7 @@
   <section class="section">
     <div class="container">
       <div class="columns">
-        <div class="column is-offset-one-fifth">
+        <div class="column">
           <h1 class="title is-1">
             Gestion des déchets
           </h1>
@@ -66,46 +66,16 @@
     </p>
 	  </div>
           <br /><br />
-          <div class="buttons has-addons">
-            <button id="button_barplot" class="button is-primary is-selected" onclick="buttonChange('barplot')">
-              Bar plot
-            </button>
-            <button id="button_map" class="button" onclick="buttonChange('map')">
-              Carte
-            </button>
-            <button id="button_piechart" class="button" onclick="buttonChange('piechart')">
-              Pie Chart
-            </button>
-          </div>
-          <div id="barplot"><iframe src="./stackedBarPlot.html" width="1500" height="1000" frameborder="0"></iframe></div>
+          <h3 class="title">Carte de la production et traitement de déchets par régions</h3>
           <div id="map"><iframe src="./carteValeurs.html" width="1500" height="800" frameborder="0"></iframe></div>
-          <div id="piechart"><iframe src="./camembert.html" width="1500" height="800" frameborder="0"></iframe></div>
+          <h3 class="title">Diagramme en barres superposées et diagramme circulaire des déchets</h3>
+          <div id="barplot"><iframe src="./stackedBarPlot.html" width="1500" height="1000" frameborder="0"></iframe> <iframe src="./camembert.html" width="1500" height="800" frameborder="0"></iframe></div>
+        
         </div>
       </div>
     </div>
   </section>
 
-
-  <script>
-    buttonChange("barplot");
-    function hideall() {
-      $("#barplot").hide();
-      $("#map").hide();
-      $("#piechart").hide();
-    }
-    function unselectall() {
-      $("#button_barplot").removeClass("is-primary is-selected");
-      $("#button_map").removeClass("is-primary is-selected");
-      $("#button_piechart").removeClass("is-primary is-selected");
-    }
-    function buttonChange(id) {
-      hideall();
-      unselectall();
-      $("#" + id).show();
-      $("#button_" + id).addClass("is-primary is-selected");
-    }
-
-  </script>
 
 </body>
 
