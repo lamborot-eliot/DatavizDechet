@@ -2,6 +2,7 @@
 <head>
   <meta charset="utf-8" />
   <script src="https://d3js.org/d3.v6.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
   <script type="text/javascript" src="data_process.js"></script>
   <style>
     body {
@@ -21,11 +22,19 @@
       opacity: 0.9;
       position: absolute;
     }
+    .column {
+    float: left;
+    width: 50%;
+    }
+    .column-right {
+      position: fixed;
+      bottom: 0;
+    }
   </style>
 </head>
 
 <body>
-  <div>
+  <div id="left-column" class="column">
     <input
       id="slider"
       type="range"
@@ -35,38 +44,59 @@
       step="2"
     />
     <span id="year">Year: 2009</span>
-    <select id="type_filtre" value="N" onchange="typeFilterChange()">
-      <option value="N">Pas de Filtre</option>
-      <option value="D">Type de Déchet</option>
-      <option value="T">Type de Traitement</option>
-    </select>
-    <select id="type_dechet" value="N">
-      <option value="N">Tous</option>
-      <option id="02A" value="02A">02A</option>
-      <option id="02B" value="02B">02B</option>
-      <option id="02C" value="02C">02C</option>
-      <option id="02D" value="02D">02D</option>
-      <option id="02E" value="02E">02E</option>
-      <option id="02F" value="02F">02F</option>
-      <option id="02Z" value="02Z">02Z</option>
-    </select>
+    <div id="chart"></div>
+  </div>
+  <div id="right-column" class="column-right">
+    <div id="dechet">
+      Type de dechets </br>
+      <input type="checkbox" id="dechet1" value="02A" checked onchange="typeDechet()"/>
+      <label for="dechet1"> Déchets dangereux</label></br>
+      <input type="checkbox" id="dechet2" value="02B" checked onchange="typeDechet()"/>
+      <label for="dechet2"> Matériaux </label></br>
+      <input type="checkbox" id="dechet3" value="02C" checked onchange="typeDechet()"/>
+      <label for="dechet3"> Déchets verts </label></br>
+      <input type="checkbox" id="dechet4" value="02D" checked onchange="typeDechet()"/>
+      <label for="dechet4"> Encombrants </label></br>
+      <input type="checkbox" id="dechet5" value="02E" checked onchange="typeDechet()"/>
+      <label for="dechet5"> Déblais et gravats </label></br>
+      <input type="checkbox" id="dechet6" value="02F" checked onchange="typeDechet()"/>
+      <label for="dechet6"> DEEE </label></br>
+      <input type="checkbox" id="dechet7" value="02Z" checked onchange="typeDechet()"/>
+      <label for="dechet7"> Autres déchets </label></br>
+    </div>
+    <div id="traitement">
+      Type de traitement </br>
+      <input type="checkbox" id="traitement1" value="02A" checked onchange="typeTraitement()"/>
+      <label for="traitement1"> Valorisation matière</label></br>
+      <input type="checkbox" id="traitement2" value="02B" checked onchange="typeTraitement()"/>
+      <label for="traitement2"> Incinération avec récupération d'énergie </label></br>
+      <input type="checkbox" id="traitement3" value="02C" checked onchange="typeTraitement()"/>
+      <label for="traitement3"> Stockage </label></br>
+      <input type="checkbox" id="traitement4" value="02D" checked onchange="typeTraitement()"/>
+      <label for="traitement4"> Stockage pour inertes </label></br>
+      <input type="checkbox" id="traitement5" value="02E" checked onchange="typeTraitement()"/>
+      <label for="traitement5"> Non précisé </label></br>
+      <input type="checkbox" id="traitement6" value="02F" checked onchange="typeTraitement()"/>
+      <label for="traitement6"> "Valorisation  </label></br>
+      <input type="checkbox" id="traitement7" value="02Z" checked onchange="typeTraitement()"/>
+      <label for="traitement7"> Incinération sans récupération d'énergie </label></br>
+    </div>
   </div>
   <script>
     var width = 700,
       height = 580;
 
     var svg = d3
-      .select("body")
+      .select("#left-column")
       .append("svg")
       .attr("width", width)
       .attr("height", height);
     var tooltip = d3
-      .select("body")
+      .select("#left-column")
       .append("div")
       .attr("class", "hidden tooltip");
 
     // On rajoute un groupe englobant toute la visualisation pour plus tard
-    var g = svg.append("g");
 
     var projection = d3
       .geoConicConformal()
@@ -79,17 +109,19 @@
       .scaleQuantize()
       .range(["#edf8e9", "#bae4b3", "#74c476", "#31a354", "#006d2c"]);
 
+    var legend = d3.legendColor().scale(color);
+    //var g = svg.append("g").call(legend);
+    var g = svg.append("g"); //Test
     //d3.csv("http://localhost:8888/data.csv").then(function (data) {
-    //color.domain([0, 2000000]); //regle l'echelle ici
-    d3.json("https://raw.githubusercontent.com/lamborot-eliot/DatavizDechet/gh-pages/regions-version-simplifiee.geojson").then(function (json) {
+    d3.json(
+      "https://raw.githubusercontent.com/lamborot-eliot/DatavizDechet/gh-pages/regions-version-simplifiee.geojson"
+    ).then(function (json) {
       //On fusionne les donnees avec le GeoJSON des regions
 
       load_data().then((data) => {
         var dict = {};
         var array_filter_type_service = data.get_type_services();
         var array_filter_type_dechet = data.get_type_dechets();
-        var array_filter_type_service_orig = array_filter_type_service;
-        var array_filter_type_dechet_orig = array_filter_type_dechet;
         //list of region
         var list_region = data.get_region_list();
 
@@ -117,100 +149,35 @@
 
         var updateViz = (max_val, min_val) => {
           let val = document.getElementById("slider").value;
-          let type_dechet = document.getElementById("type_dechet").value;
-          let type_filter = document.getElementById("type_filtre").value;
+          array_filter_type_dechet= isDechetChecked();
+          array_filter_type_service = isTraitementChecked();
           d3.select("#year").html("Year: " + val);
-
-          if (type_filter.localeCompare("N") == 0) {
-            //we take everything
-            array_filter_type_dechet = array_filter_type_dechet_orig;
-            array_filter_type_service = array_filter_type_service_orig;
-
-            max_val = -1;
-            min_val = -1;
-            dict = {};
-            for (var j = 0; j < list_region.length; j++) {
-              dict[list_region[j]] = data
-                .get_region(list_region[j])
-                .get_year(val)
-                .get_total_dechets();
-              var res = update_born(dict[list_region[j]], max_val, min_val);
-              max_val = res[0];
-              min_val = res[1];
-            }
-            document.getElementById("type_dechet").style.visibility = "hidden";
-          } else {
-            document.getElementById("type_dechet").style.visibility = "visible";
-            if (type_filter.localeCompare("D") == 0) {
-              if (type_dechet.localeCompare("N") == 0) {
-                max_val = -1;
-                min_val = -1;
-                array_filter_type_dechet = array_filter_type_dechet_orig;
-                array_filter_type_service = array_filter_type_service_orig;
-                dict = {};
-                for (var j = 0; j < list_region.length; j++) {
-                  dict[list_region[j]] = data
-                    .get_region(list_region[j])
-                    .get_year(val)
-                    .get_total_dechets();
-                  var res = update_born(dict[list_region[j]], max_val, min_val);
-                  max_val = res[0];
-                  min_val = res[1];
-                }
-              } else {
-                max_val = -1;
-                min_val = -1;
-                array_filter_type_dechet = [];
-                array_filter_type_dechet[0] = type_dechet;
-                array_filter_type_service = array_filter_type_service_orig;
-                dict = {};
-                for (var j = 0; j < list_region.length; j++) {
-                  dict[list_region[j]] = data
-                    .get_region(list_region[j])
-                    .get_year(val)
-                    .get_dechet(type_dechet);
-                  var res = update_born(dict[list_region[j]], max_val, min_val);
-                  max_val = res[0];
-                  min_val = res[1];
-                }
-              }
-            } else {
-              if (type_dechet.localeCompare("N") == 0) {
-                max_val = -1;
-                min_val = -1;
-                array_filter_type_dechet = array_filter_type_dechet_orig;
-                array_filter_type_service = array_filter_type_service_orig;
-                dict = {};
-                for (var j = 0; j < list_region.length; j++) {
-                  dict[list_region[j]] = data
-                    .get_region(list_region[j])
-                    .get_year(val)
-                    .get_total_dechets();
-                  var res = update_born(dict[list_region[j]], max_val, min_val);
-                  max_val = res[0];
-                  min_val = res[1];
-                }
-              } else {
-                max_val = -1;
-                min_val = -1;
-                array_filter_type_dechet = [];
-                array_filter_type_dechet[0] = type_dechet;
-                array_filter_type_service = array_filter_type_service_orig;
-                dict = {};
-                for (var j = 0; j < list_region.length; j++) {
-                  dict[list_region[j]] = data
-                    .get_region(list_region[j])
-                    .get_year(val)
-                    .get_service(type_dechet);
-                  var res = update_born(dict[list_region[j]], max_val, min_val);
-                  max_val = res[0];
-                  min_val = res[1];
+          max_val = -1;
+          min_val = -1;
+          dict = {};
+          for (var j = 0; j < list_region.length; j++) {
+            var somme_val = 0;
+            var curr=0;
+            for (var m =0;m<array_filter_type_dechet.length;m++){
+              for(var n=0;n<array_filter_type_service.length;n++){
+                curr=data.get_region(list_region[j]).get_year(val).get_dechet_service(array_filter_type_dechet[m],array_filter_type_service[n]);
+                if(curr){
+                  somme_val = somme_val + curr;
+                }else{
+                  somme_val=somme_val;
                 }
               }
             }
-          }
+            dict[list_region[j]] = somme_val;
+            var res = update_born(somme_val, max_val, min_val);
+            max_val = res[0];
+            min_val = res[1];
+          }           
+        
           color.domain([min_val, max_val]); //regle l'echelle ici
-
+          g.call(legend); //maj of legend
+        
+        
           for (var i = 0; i < json.features.length; i++) {
             d3.select("#region" + json.features[i].properties.code).style(
               "fill",
@@ -237,15 +204,50 @@
             );
           }
         };
-
+        
+        d3.select("#dechet1").on("change", function () {
+          updateViz(max_val, min_val);
+        });
+        d3.select("#dechet2").on("change", function () {
+          updateViz(max_val, min_val);
+        });
+        d3.select("#dechet3").on("change", function () {
+          updateViz(max_val, min_val);
+        });
+        d3.select("#dechet4").on("change", function () {
+          updateViz(max_val, min_val);
+        });
+        d3.select("#dechet5").on("change", function () {
+          updateViz(max_val, min_val);
+        });
+        d3.select("#dechet6").on("change", function () {
+          updateViz(max_val, min_val);
+        });
+        d3.select("#dechet7").on("change", function () {
+          updateViz(max_val, min_val);
+        });
+        d3.select("#traitement1").on("change", function () {
+          updateViz(max_val, min_val);
+        });
+        d3.select("#traitement2").on("change", function () {
+          updateViz(max_val, min_val);
+        });
+        d3.select("#traitement3").on("change", function () {
+          updateViz(max_val, min_val);
+        });
+        d3.select("#traitement4").on("change", function () {
+          updateViz(max_val, min_val);
+        });
+        d3.select("#traitement5").on("change", function () {
+          updateViz(max_val, min_val);
+        });
+        d3.select("#traitement6").on("change", function () {
+          updateViz(max_val, min_val);
+        });
+        d3.select("#traitement7").on("change", function () {
+          updateViz(max_val, min_val);
+        });
         d3.select("#slider").on("input", function () {
-          updateViz(max_val, min_val);
-        });
-
-        d3.select("#type_filtre").on("input", function () {
-          updateViz(max_val, min_val);
-        });
-        d3.select("#type_dechet").on("input", function () {
           updateViz(max_val, min_val);
         });
         g.selectAll("path")
@@ -274,37 +276,86 @@
             tooltip.style("opacity", 0);
           });
         // On initialize la page
-        document.getElementById("type_dechet").style.visibility = "hidden";
         updateViz(0, 2000000);
       });
     });
-    function typeFilterChange() {
-      var x = document.getElementById("type_filtre").value;
-      if (x.localeCompare("D") == 0) {
-        document.getElementById("type_dechet").value = "N";
-        document.getElementById("02A").innerHTML = "Déchets dangereux";
-        document.getElementById("02B").innerHTML = "Matériaux recyclables";
-        document.getElementById("02C").innerHTML = "Déchets verts";
-        document.getElementById("02D").innerHTML = "Encombrants";
-        document.getElementById("02E").innerHTML = "Déblais et gravats";
-        document.getElementById("02F").innerHTML = "DEEE";
-        document.getElementById("02Z").innerHTML = "Autres déchets";
-      } else {
-        if (x.localeCompare("T") == 0) {
-          document.getElementById("type_dechet").value = "N";
-          document.getElementById("02A").innerHTML = "Valorisation matière";
-          document.getElementById("02B").innerHTML =
-            "Incinération avec récupération d'énergie";
-          document.getElementById("02C").innerHTML = "Stockage";
-          document.getElementById("02D").innerHTML = "Stockage pour inertes";
-          document.getElementById("02E").innerHTML = "Non précisé";
-          document.getElementById("02F").innerHTML = "Valorisation organique";
-          document.getElementById("02Z").innerHTML =
-            "Incinération sans récupération d'énergie";
-        } else {
-          document.getElementById("type_dechet").value = "N";
-        }
+    
+    function typeDechet(){
+      //console.log("Dechet");
+      //console.log(document.getElementById("dechet1").checked);
+    }
+    function typeTraitement(){
+      //console.log("Traitement");
+    }
+    function isTraitementChecked(){
+      //console.log("isTraitmeent");
+      var array_traitement = [];
+      var i=0;
+      if(document.getElementById("traitement1").checked){
+        array_traitement[i]=document.getElementById("traitement1").value;
+        i=i+1;
       }
+      if(document.getElementById("traitement2").checked){
+        array_traitement[i]=document.getElementById("traitement2").value;
+        i=i+1;
+      }
+      if(document.getElementById("traitement3").checked){
+        array_traitement[i]=document.getElementById("traitement3").value;
+        i=i+1;
+      }
+      if(document.getElementById("traitement4").checked){
+        array_traitement[i]=document.getElementById("traitement4").value;
+        i=i+1;
+      }
+      if(document.getElementById("traitement5").checked){
+        array_traitement[i]=document.getElementById("traitement5").value;
+        i=i+1;
+      }
+      if(document.getElementById("traitement6").checked){
+        array_traitement[i]=document.getElementById("traitement6").value;
+        i=i+1;
+      }
+      if(document.getElementById("traitement7").checked){
+        array_traitement[i]=document.getElementById("traitement7").value;
+        i=i+1;
+      }
+      //console.log(array_traitement);
+      return array_traitement;
+    }
+    function isDechetChecked(){
+      //console.log("IsDechet");
+      var array_dechet = [];
+      var i=0;
+      if(document.getElementById("dechet1").checked){
+        array_dechet[i]=document.getElementById("dechet1").value;
+        i=i+1;
+      }
+      if(document.getElementById("dechet2").checked){
+        array_dechet[i]=document.getElementById("dechet2").value;
+        i=i+1;
+      }
+      if(document.getElementById("dechet3").checked){
+        array_dechet[i]=document.getElementById("dechet3").value;
+        i=i+1;
+      }
+      if(document.getElementById("dechet4").checked){
+        array_dechet[i]=document.getElementById("dechet4").value;
+        i=i+1;
+      }
+      if(document.getElementById("dechet5").checked){
+        array_dechet[i]=document.getElementById("dechet5").value;
+        i=i+1;
+      }
+      if(document.getElementById("dechet6").checked){
+        array_dechet[i]=document.getElementById("dechet6").value;
+        i=i+1;
+      }
+      if(document.getElementById("dechet7").checked){
+        array_dechet[i]=document.getElementById("dechet7").value;
+        i=i+1;
+      }
+      //console.log(array_dechet);
+      return array_dechet;
     }
   </script>
 </body>

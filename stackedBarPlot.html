@@ -24,19 +24,23 @@
     }
 
     .vl {
-    	border-left: 3px solid #DCDCDC;
-     	height: 650px;
+        border-left: 3px solid #DCDCDC;
+        height: 650px;
     }
-input[type=checkbox]
-{
-  /* Double-sized Checkboxes */
-  -ms-transform: scale(2); /* IE */
-  -moz-transform: scale(2); /* FF */
-  -webkit-transform: scale(2); /* Safari and Chrome */
-  -o-transform: scale(2); /* Opera */
-  transform: scale(2);
-  padding: 10px;
-}
+
+    input[type=checkbox] {
+        /* Double-sized Checkboxes */
+        -ms-transform: scale(2);
+        /* IE */
+        -moz-transform: scale(2);
+        /* FF */
+        -webkit-transform: scale(2);
+        /* Safari and Chrome */
+        -o-transform: scale(2);
+        /* Opera */
+        transform: scale(2);
+        padding: 10px;
+    }
 </style>
 
 <body>
@@ -50,19 +54,15 @@ input[type=checkbox]
             <input type="radio" name="xType" value=1 onclick="getParamsAndUpdate()" checked>
             Régions
         </label>
-        <label class="radio">
-            <input type="radio" name="xType" value=2 onclick="getParamsAndUpdate()" disabled>
-            Traitements
-        </label>
     </div>
 
 
 
     <div id="app"></div>
     <div class="columns">
-    	<div class="column" id="my_dataviz"></div>
-	<div class="vl"></div>
-    	<div class="column" id="cocher"></div>
+        <div class="column" id="my_dataviz"></div>
+        <div class="vl"></div>
+        <div class="column" id="cocher"></div>
     </div>
     <span class="error" id="errorCheckbox"></span>
 
@@ -91,7 +91,7 @@ input[type=checkbox]
 
         // var colorRange = ['#e41a1c', '#377eb8', '#4daf4a', '#993A80', '#800000', '#ff9900', '#98928B'];
         let colorRange = ['#eF716F', '#b6b4dF', '#a8d67B', '#dFaB85', '#dFcE85', '#93cEdF', '#c8c2bB'];
-        var margin = { top: 10, right: 300, bottom: 150, left: 70 };
+        var margin = { top: 10, right: 20, bottom: 150, left: 70 };
         let svgWidth = 860 - margin.left - margin.right;
         let svgHeight = 800 - margin.top - margin.bottom;
 
@@ -213,35 +213,35 @@ input[type=checkbox]
                 .on("mouseleave", mouseleave);
 
             // add legend   
-            let legendRectSize = 20;
-            let legendSpacing = 20;
-            svgBarPlot.selectAll('.legend').remove();
-            var legend = svgBarPlot.selectAll('.legend')
-                .data(chosenDechets.sort())
-                .enter()
-                .append('g')
-                .attr('class', 'legend')
-                .attr('transform', function (d, i) {
-                    var height = legendRectSize + legendSpacing;
-                    var offset = height * chosenDechets.length / 2;
-                    var horz = -2 * legendRectSize + svgWidth + margin.left;
-                    var vert = 215 + i * height - offset;
-                    return 'translate(' + horz + ',' + vert + ')';
-                });
+            // let legendRectSize = 20;
+            // let legendSpacing = 20;
+            // svgBarPlot.selectAll('.legend').remove();
+            // var legend = svgBarPlot.selectAll('.legend')
+            //     .data(chosenDechets.sort())
+            //     .enter()
+            //     .append('g')
+            //     .attr('class', 'legend')
+            //     .attr('transform', function (d, i) {
+            //         var height = legendRectSize + legendSpacing;
+            //         var offset = height * chosenDechets.length / 2;
+            //         var horz = -2 * legendRectSize + svgWidth + margin.left;
+            //         var vert = 215 + i * height - offset;
+            //         return 'translate(' + horz + ',' + vert + ')';
+            //     });
 
-            legend.append('rect')
-                .attr('width', legendRectSize)
-                .attr('height', legendRectSize)
-                .style('fill', color)
-                .style('stroke', color);
+            // legend.append('rect')
+            //     .attr('width', legendRectSize)
+            //     .attr('height', legendRectSize)
+            //     .style('fill', color)
+            //     .style('stroke', color);
 
-            legend.append('text')
-                .attr('x', legendRectSize + legendSpacing)
-                .attr('y', 16 + legendRectSize - legendSpacing)
-                .data(chosenDechets.reverse().sort())
-                .text(function (d, i) {
-                    return data.get_type_dechets()[d];
-                });
+            // legend.append('text')
+            //     .attr('x', legendRectSize + legendSpacing)
+            //     .attr('y', 16 + legendRectSize - legendSpacing)
+            //     .data(chosenDechets.reverse().sort())
+            //     .text(function (d, i) {
+            //         return data.get_type_dechets()[d];
+            //     });
 
         }
 
@@ -356,11 +356,11 @@ input[type=checkbox]
 
             var subgroups_dur = Object.keys(data.get_type_dechets());
             var list_cocher = document.createElement('ul');
-		
-            subgroups_dur.forEach(function (grp) {
-		var li = document.createElement('li');
+
+            subgroups_dur.forEach(function (grp, index) {
+                var li = document.createElement('li');
                 var cb = document.createElement('INPUT');
-		cb.style.marginRight = "20px";
+                cb.style.marginRight = "20px";
                 cb.setAttribute("type", "checkbox");
                 cb.setAttribute("id", grp);
                 cb.setAttribute("name", grp);
@@ -369,11 +369,12 @@ input[type=checkbox]
                 li.appendChild(cb);
                 var label = document.createElement('label');
                 label.setAttribute("for", grp);
+                label.setAttribute("style", `padding: 2px; border-width: 5px; border-style: solid; border-radius: 4px; border-color: ${colorRange[index]};`);
                 label.textContent = data.get_type_dechets()[grp];
                 li.appendChild(label);
-		var br = document.createElement('br')
-		list_cocher.appendChild(li);
-		list_cocher.appendChild(br);
+                var br = document.createElement('br')
+                list_cocher.appendChild(li);
+                list_cocher.appendChild(br);
             });
 
             var cocher = document.querySelector('#cocher');
